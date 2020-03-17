@@ -17,7 +17,7 @@ class Workspace extends Component {
     }
 
     render() {
-        // const { user } = this.props;
+        const { user } = this.props;
         const { selectedTab } = this.state;
 
         return (
@@ -26,7 +26,7 @@ class Workspace extends Component {
 
                 <div className="container">
                     {(selectedTab === 'startTab') && (
-                        <Welcome/>
+                        <Welcome user={user}/>
                     )}
                 </div>
             </div>
