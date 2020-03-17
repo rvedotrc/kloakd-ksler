@@ -1,0 +1,8 @@
+{
+  "name": "kloakdaeksler",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/rvedotrc/kloakdaeksler",
+  "author": "Rachel Evans <rachel@rachelevans.org>",
+  "license": "MIT"
+}
