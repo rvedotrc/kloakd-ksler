@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-// import PageRoot from './js/components/PageRoot';
+import PageRoot from './components/PageRoot';
 
 document.addEventListener('DOMContentLoaded', () => {
     ReactDOM.render(
-        <span>Hello!</span>,
+        <PageRoot/>,
         document.getElementById("react_container")
     );
 });
