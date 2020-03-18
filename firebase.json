@@ -12,5 +12,22 @@
   },
   "database": {
     "rules": "database.rules.json"
+  },
+  "emulators": {
+    "functions": {
+      "port": 5101
+    },
+    "firestore": {
+      "port": 8180
+    },
+    "database": {
+      "port": 9100
+    },
+    "hosting": {
+      "port": 5100
+    },
+    "pubsub": {
+      "port": 8185
+    }
   }
 }

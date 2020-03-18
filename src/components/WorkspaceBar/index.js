@@ -10,8 +10,8 @@ class WorkspaceBar extends Component {
         return (
             <div id={'WorkspaceBar'}>
                 <button onClick={()=>{this.switchTabTo('startTab')}}>Home</button>
-                {/*&nbsp;*/}
-                {/*<button onClick={()=>{this.switchTabTo('testTab')}}>{t('workspace_bar.practice')}</button>*/}
+                &nbsp;
+                <button onClick={()=>{this.switchTabTo('imageListTab')}}>Images</button>
                 {/*&nbsp;*/}
                 {/*<button onClick={()=>{this.switchTabTo('verbListTab')}}>{t('workspace_bar.list_of_verbs')}</button>*/}
                 {/*&nbsp;*/}

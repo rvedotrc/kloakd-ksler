@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 
 import Welcome from '../Welcome';
 import WorkspaceBar from '../WorkspaceBar';
+import ImageList from "../ImageList";
 
 class Workspace extends Component {
     constructor(props) {
@@ -26,7 +27,10 @@ class Workspace extends Component {
 
                 <div className="container">
                     {(selectedTab === 'startTab') && (
-                        <Welcome user={user}/>
+                        <Welcome/>
+                    )}
+                    {(selectedTab === 'imageListTab') && (
+                        <ImageList user={user}/>
                     )}
                 </div>
             </div>
