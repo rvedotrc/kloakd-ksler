@@ -2,13 +2,17 @@ import React, { Component } from 'react';
 
 import Dropzone from 'react-dropzone'
 import PropTypes from "prop-types";
+import ReactModal from 'react-modal';
+import EditImage from "./edit_image";
 
 class ImageList extends Component {
 
     constructor(props) {
         super(props);
         this.state = {
-            // uploadTasks: [],
+            queuedUploads: [],
+            uploadTasks: [],
+            openImage: null,
         };
     }
 
@@ -16,18 +20,37 @@ class ImageList extends Component {
         var imagesRef = firebase.storage().ref().child(`user/${this.props.user.uid}/images`);
 
         imagesRef.list().then(listResult => {
-            const promises = listResult.items.map(childRef => {
-                return childRef.getMetadata()
-                    .then(metadata => ({
-                        fullPath: childRef.fullPath,
-                        metadata,
-                    }));
+
+            const bySha = {};
+            const ignoredNames = [];
+            const promises = [];
+
+            // TODO pagination?
+            listResult.items.map(ref => {
+                const match = ref.name.match(/sha-256-(\w{64})(?:_(\d+x\d+))?$/);
+                if (match) {
+                    const sha = match[1];
+                    const thumbnailSize = match[2];
+
+                    const entry = (bySha[sha] = bySha[sha] || { thumbnails: {} });
+
+                    if (!thumbnailSize) {
+                        promises.push(
+                            ref.getMetadata().then(metadata => entry.metadata = metadata)
+                        );
+                    } else {
+                        entry.thumbnails[thumbnailSize] = ref.fullPath;
+                    }
+                } else {
+                    ignoredNames.push(ref.name);
+                }
             });
 
-            return Promise.all(promises);
-        }).then(imageList => {
-            console.log("imageList", imageList);
-            this.setState({ imageList });
+            if (ignoredNames.length > 0) {
+                console.log("Ignored names:", { ignoredNames });
+            }
+
+            return Promise.all(promises).then(() => this.setState({ bySha }));
         }).catch(e => console.log('storage list failed', e));
     }
 
@@ -40,16 +63,19 @@ class ImageList extends Component {
         return imageList.find(image => image.fullPath == path);
     }
 
-    startUpload(file, path) {
-        const uploadTask = firebase.storage().ref().child(path)
-            .put(file, { contentType: file.type });
+    startUpload(job) {
+        const { id, file, path } = job;
 
-        // this.setState((state, props) => {
-        //     const task = {uploadTask, path};
-        //     return {
-        //         uploadTasks: state.uploadTasks.concat([task]),
-        //     };
-        // });
+        const metadata = {
+            contentType: file.type,
+            customMetadata: {
+                originalName: file.name,
+                originalLastModified: "" + file.lastModified,
+            },
+        };
+
+        const uploadTask = firebase.storage().ref().child(path)
+            .put(file, metadata);
 
         // pause, resume, cancel
 
@@ -61,13 +87,52 @@ class ImageList extends Component {
             },
             error => {
                 console.log("file", path, "upload failed:", error);
+                this.removeUpload(id);
             },
             () => {
                 console.log("file", path, "upload complete. woot!");
+                this.removeUpload(id);
             },
         );
 
         return uploadTask;
+    }
+
+    enqueueUpload(file, path) {
+        const id = new Date().getTime();
+        const job = { id, file, path };
+        console.log("enqueue upload", job);
+        this.state.queuedUploads.push(job);
+        this.maybeStartUpload();
+    }
+
+    removeUpload(id) {
+        const index = this.state.uploadTasks.findIndex(job => job.id === id);
+        if (index < 0) return;
+
+        const job = this.state.uploadTasks[index];
+
+        console.log({
+            uploadTasks: this.state.uploadTasks,
+            id,
+            index,
+            job,
+        });
+
+        console.log("Upload completed/failed", job);
+
+        this.state.uploadTasks.splice(index, 1);
+        this.maybeStartUpload();
+    }
+
+    maybeStartUpload() {
+        if (this.state.queuedUploads.length === 0) return;
+        if (this.state.uploadTasks.length >= 5) return;
+
+        const job = this.state.queuedUploads.shift();
+        console.log("Starting upload", job);
+        this.state.uploadTasks.push(job);
+        return this.startUpload(job);
     }
 
     uploadFiles(files) {
@@ -79,17 +144,20 @@ class ImageList extends Component {
             }).then(digestBuffer => {
                 const digestArray = Array.from(new Uint8Array(digestBuffer));
                 const digestString = digestArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                console.log({ file });
                 console.log("file", file.name, "has digest", digestString);
 
                 const path = `user/${this.props.user.uid}/images/sha-256-${digestString}`;
 
                 const existingImage = this.findExistingImage(path);
-                if (existingImage) {
+                console.log({ existingImage });
+
+                if (existingImage && existingImage.metadata.timeCreated > '2020-04-19T17:50:') {
                     console.log(`Declining to upload ${file.path} because it already exists at ${path}`, existingImage);
                     return;
                 }
 
-                return this.startUpload(file, path);
+                return this.enqueueUpload(file, path);
             }).catch(error => {
                 console.log("error while processing file", file.name, ":", error);
             });
@@ -97,7 +165,7 @@ class ImageList extends Component {
     }
 
     render() {
-        const { imageList } = this.state;
+        const { bySha } = this.state;
 
         return (
             <div>
@@ -118,25 +186,44 @@ class ImageList extends Component {
                     )}
                 </Dropzone>
 
-                {imageList && (
+                {
+                    this.state.openImage && <ReactModal
+                        isOpen={true}
+                        contentLabel={"Test"}
+                        appElement={document.getElementById("react_container")}
+                    >
+                        <EditImage
+                            sha={this.state.openImage}
+                            entry={this.state.bySha[this.state.openImage]}
+                            onClose={() => this.setState({ openImage: null })}
+                        />
+                    </ReactModal>
+                }
+
+                {bySha && (
                     <div>
                         <h2>List</h2>
                         <ol>
-                            {imageList.map(image => {
-                                console.log("rendering ref", image);
-                                const parts = image.fullPath.split('/');
-                                const basename = parts[parts.length - 1];
+                            {Object.keys(bySha).sort().map(sha => {
+                                const entry = bySha[sha];
 
-                                return (<li key={image.fullPath}>
-                                    {basename}
-                                    {' '}
-                                    ({image.metadata.size})
-                                    {/*({JSON.stringify(image.metadata)})*/}
-                                </li>);
+                                return (
+                                    <li
+                                        key={sha}
+                                        onClick={() => this.setState({ openImage: sha })}
+                                    >
+                                        {sha}
+                                        {' '}
+                                        ({entry.metadata.size})
+                                        ({Object.keys(entry.thumbnails).sort().join()})
+                                        ({JSON.stringify(entry.metadata.customMetadata)})
+                                    </li>
+                                );
                             })}
                         </ol>
                     </div>
                 )}
+
             </div>
         )
     }
