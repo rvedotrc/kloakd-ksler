@@ -39,11 +39,19 @@ class ImageIcon extends Component {
             style.border = '1px solid red';
         }
 
+        const transform = `rotate(${1 * (this.props.dbData.rotateDegrees || 0)}deg)`;
+
         return (
-            <img
-                style={style}
-                src={imageDownloadUrl}
-            />
+            <div>
+                <p className="imageText">{this.props.dbData.text || ''}</p>
+                <p className="imageTags">{(this.props.dbData.tags || []).join(' ')}</p>
+                {/*<code>{JSON.stringify(this.props.dbData)}</code>*/}
+                <img
+                    style={style}
+                    src={imageDownloadUrl}
+                    style={{transform: transform}}
+                />
+            </div>
         );
     }
 
@@ -52,6 +60,7 @@ class ImageIcon extends Component {
 ImageIcon.propTypes = {
     sha: PropTypes.string.isRequired,
     entry: PropTypes.object.isRequired,
+    dbData: PropTypes.object.isRequired,
 };
 
 export default ImageIcon;

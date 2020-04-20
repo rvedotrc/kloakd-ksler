@@ -20,6 +20,19 @@ class ImageList extends Component {
     }
 
     componentDidMount() {
+        const ref = firebase.database().ref(`users/${this.props.user.uid}/images`);
+        this.setState({ ref });
+        ref.on('value', snapshot => this.setState({ dbValue: snapshot.val() || {}}));
+
+        this.readStorage();
+    }
+
+    componentWillUnmount() {
+        const { ref } = this.state;
+        if (ref) ref.off();
+    }
+
+    readStorage() {
         var imagesRef = firebase.storage().ref().child(`user/${this.props.user.uid}/images`);
 
         const bySha = {};
@@ -189,22 +202,18 @@ class ImageList extends Component {
     }
 
     render() {
-        const { bySha, showGrid } = this.state;
+        const { bySha, showGrid, dbValue } = this.state;
 
         return (
             <div>
                 <h1>Image List / Upload</h1>
-
-                <p>Let&apos; collect pictures of manhole covers! Some of them are so pretty!</p>
-
-                <h2>Feed me!</h2>
 
                 <Dropzone onDrop={this.uploadFiles.bind(this)}>
                     {({getRootProps, getInputProps}) => (
                         <section>
                             <div {...getRootProps()}>
                                 <input {...getInputProps()} />
-                                <p>Drop your pictures here, or click to choose some files. Nom nom nom.</p>
+                                <p>Feed me, Seymour! Drop your pictures here, or click to choose some files. Nom nom nom.</p>
                             </div>
                         </section>
                     )}
@@ -217,6 +226,7 @@ class ImageList extends Component {
                         appElement={document.getElementById("react_container")}
                     >
                         <EditImage
+                            user={this.props.user}
                             sha={this.state.openImage}
                             entry={this.state.bySha[this.state.openImage]}
                             onClose={() => this.setState({ openImage: null })}
@@ -254,7 +264,7 @@ class ImageList extends Component {
                     </div>
                 )}
 
-                {bySha && showGrid && <div>
+                {bySha && showGrid && dbValue && <div>
                     <ol className="imageGrid">
                         {Object.keys(bySha).sort().map(sha => {
                             const entry = bySha[sha];
@@ -264,7 +274,7 @@ class ImageList extends Component {
                                     key={sha}
                                     onClick={() => this.setState({ openImage: sha })}
                                 >
-                                    <ImageIcon sha={sha} entry={entry}/>
+                                    <ImageIcon sha={sha} entry={entry} dbData={dbValue[sha] || {}}/>
                                 </li>
                             );
                         })}

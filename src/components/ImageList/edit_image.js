@@ -22,16 +22,35 @@ class EditImage extends Component {
         } catch(e) {
             console.log({ e });
         }
+
+        const ref = firebase.database().ref(`users/${this.props.user.uid}/images/${this.props.sha}`);
+
+        ref.once('value', snapshot => {
+            const dbData = snapshot.val() || {};
+            const textValue = dbData.text || '';
+            const tagsArray = dbData.tags || [];
+            const tagsValue = tagsArray.sort().join(' ');
+            const rotateDegrees = dbData.rotateDegrees || 0;
+            this.setState({ dbData, textValue, tagsValue, tagsArray, rotateDegrees });
+        });
     }
 
-    reset() {
+    resetRotation() {
         this.setState({ rotateDegrees: 0 });
     }
 
-    saveAndClose() {
-        const rotateDegrees = this.state.rotateDegrees || 0;
-        console.log("TODO: save params for", this.props.sha, "as", { rotateDegrees });
-        this.props.onClose();
+    onSubmit() {
+        const { textValue, tagsArray, rotateDegrees } = this.state;
+        if (typeof(textValue) !== 'string' || !tagsArray || typeof(rotateDegrees) !== 'number') return;
+
+        firebase.database().ref(`users/${this.props.user.uid}/images/${this.props.sha}`)
+            .set({
+                text: textValue,
+                tags: tagsArray,
+                rotateDegrees: rotateDegrees,
+            })
+            .then(() => this.props.onClose())
+            .catch(err => console.error("Error saving image data to db:", err));
     }
 
     onKeyDown(e) {
@@ -62,7 +81,7 @@ class EditImage extends Component {
                 this.props.onClose();
                 break;
             case '0:':
-                this.reset();
+                this.resetRotation();
                 break;
             case 'ArrowLeft:': rotate(-10); break;
             case 'ArrowLeft:S': rotate(-90); break;
@@ -86,7 +105,9 @@ class EditImage extends Component {
                 firebase.storage().ref(fullPath).delete()
             )
         ).then(() => {
-            firebase.storage().ref(this.props.entry.metadata.fullPath).delete()
+            return firebase.storage().ref(this.props.entry.metadata.fullPath).delete();
+        }).then(() => {
+            return firebase.database().ref(`users/${this.props.user.uid}/images/${this.props.sha}`).delete();
         }).then(() => {
             this.props.onDelete(this.props.sha);
             this.props.onClose();
@@ -94,24 +115,74 @@ class EditImage extends Component {
     }
 
     render() {
-        const { imageDownloadUrl, rotateDegrees } = this.state;
+        const { imageDownloadUrl, rotateDegrees, dbData } = this.state;
         if (!imageDownloadUrl) return null;
+        if (!dbData) return null;
 
         const transform = `rotate(${1 * (rotateDegrees || 0)}deg)`;
 
         return (
             <div>
-                <p>{this.props.sha}</p>
-                <p>
-                    <button onClick={this.props.onClose}>Close</button>
-                    <button onClick={() => this.confirmThenDelete()} className="danger">Delete</button>
-                </p>
+                <h1>{this.props.sha}</h1>
+
+                <form
+                    onSubmit={(e) => { e.preventDefault();this.onSubmit(); }}
+                    onReset={this.props.onClose}
+                    >
+
+                    <p>
+                        Text:
+                        {' '}
+                        <input
+                            type="text"
+                            size={50}
+                            value={this.state.textValue}
+                            onChange={e => this.setState({ textValue: e.target.value })}
+                        />
+                        <span style={{marginLeft: '1em'}}>
+                            (text that is actually part of the design)
+                        </span>
+                    </p>
+
+                    <p>
+                        Tags:
+                        {' '}
+                        <input
+                            type="text"
+                            size={50}
+                            value={this.state.tagsValue}
+                            onChange={e => {
+                                const tagsValue = e.target.value;
+                                const tagsArray = Array.from(
+                                        tagsValue.toLowerCase().matchAll(/[\wæøå:]+/g)
+                                    )
+                                    .map(v => v[0])
+                                    .filter(t => t.length > 0)
+                                    .sort();
+                                this.setState({ tagsValue, tagsArray });
+                            }}
+                        />
+                        <code style={{marginLeft: '1em'}}>
+                            {JSON.stringify(this.state.tagsArray)}
+                        </code>
+                    </p>
+
+                    <p>
+                        <button
+                            onKeyDown={e => this.onKeyDown(e)}
+                        >Rotate</button>
+                    </p>
+
+                    <p>
+                        <input type="submit" value="Save"/>
+                        <input type="reset" value="Cancel"/>
+                        <button onClick={() => this.confirmThenDelete()} className="danger">Delete</button>
+                    </p>
+
+                </form>
+
                 <p>{transform}</p>
-                <p>
-                    <button
-                        autoFocus={true}
-                        onKeyDown={e => this.onKeyDown(e)}
-                    >Twiddle</button></p>
+
                 <div style={{overflow: 'hidden'}}>
                     <img
                         src={imageDownloadUrl}
@@ -120,7 +191,9 @@ class EditImage extends Component {
                         }}
                     />
                 </div>
+
                 <hr/>
+
                 <pre>{JSON.stringify(this.props.entry, null, 2)}</pre>
             </div>
         );
@@ -129,6 +202,7 @@ class EditImage extends Component {
 }
 
 EditImage.propTypes = {
+    user: PropTypes.object.isRequired,
     sha: PropTypes.string.isRequired,
     entry: PropTypes.object.isRequired,
     onDelete: PropTypes.func.isRequired,
