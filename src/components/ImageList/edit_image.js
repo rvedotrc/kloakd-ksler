@@ -76,6 +76,23 @@ class EditImage extends Component {
         }
     }
 
+    confirmThenDelete() {
+        if (!window.confirm("Are you sure you want to delete this image?")) return;
+
+        const thumbnails = this.props.entry.thumbnails;
+
+        Promise.all(
+            Object.values(thumbnails).map(fullPath =>
+                firebase.storage().ref(fullPath).delete()
+            )
+        ).then(() => {
+            firebase.storage().ref(this.props.entry.metadata.fullPath).delete()
+        }).then(() => {
+            this.props.onDelete(this.props.sha);
+            this.props.onClose();
+        });
+    }
+
     render() {
         const { imageDownloadUrl, rotateDegrees } = this.state;
         if (!imageDownloadUrl) return null;
@@ -85,7 +102,10 @@ class EditImage extends Component {
         return (
             <div>
                 <p>{this.props.sha}</p>
-                <p><button onClick={this.props.onClose}>Close</button></p>
+                <p>
+                    <button onClick={this.props.onClose}>Close</button>
+                    <button onClick={() => this.confirmThenDelete()} className="danger">Delete</button>
+                </p>
                 <p>{transform}</p>
                 <p>
                     <button
@@ -111,6 +131,7 @@ class EditImage extends Component {
 EditImage.propTypes = {
     sha: PropTypes.string.isRequired,
     entry: PropTypes.object.isRequired,
+    onDelete: PropTypes.func.isRequired,
     onClose: PropTypes.func.isRequired,
 };
 

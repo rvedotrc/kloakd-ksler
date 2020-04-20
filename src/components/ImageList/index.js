@@ -180,6 +180,14 @@ class ImageList extends Component {
         });
     }
 
+    shaDeleted(sha) {
+        const { bySha } = this.state;
+        if (!bySha) return;
+
+        delete bySha[sha];
+        this.setState({ bySha });
+    }
+
     render() {
         const { bySha, showGrid } = this.state;
 
@@ -212,12 +220,13 @@ class ImageList extends Component {
                             sha={this.state.openImage}
                             entry={this.state.bySha[this.state.openImage]}
                             onClose={() => this.setState({ openImage: null })}
+                            onDelete={sha => this.shaDeleted(sha)}
                         />
                     </ReactModal>
                 }
 
                 <p>
-                    <input type={"checkbox"} checked={showGrid} onClick={() => this.setState({ showGrid: !showGrid })}/>
+                    <input type={"checkbox"} checked={showGrid} onChange={() => this.setState({ showGrid: !showGrid })}/>
                     Grid view
                 </p>
 
