@@ -3,13 +3,16 @@ import React, { Component } from 'react';
 import Dropzone from 'react-dropzone'
 import PropTypes from "prop-types";
 import ReactModal from 'react-modal';
+
 import EditImage from "./edit_image";
+import ImageIcon from "./image_icon";
 
 class ImageList extends Component {
 
     constructor(props) {
         super(props);
         this.state = {
+            showGrid: true,
             queuedUploads: [],
             uploadTasks: [],
             openImage: null,
@@ -19,39 +22,52 @@ class ImageList extends Component {
     componentDidMount() {
         var imagesRef = firebase.storage().ref().child(`user/${this.props.user.uid}/images`);
 
-        imagesRef.list().then(listResult => {
+        const bySha = {};
 
-            const bySha = {};
-            const ignoredNames = [];
-            const promises = [];
+        const promisePage = pageToken => {
+            console.log("promisePage", pageToken);
 
-            // TODO pagination?
-            listResult.items.map(ref => {
-                const match = ref.name.match(/sha-256-(\w{64})(?:_(\d+x\d+))?$/);
-                if (match) {
-                    const sha = match[1];
-                    const thumbnailSize = match[2];
+            return imagesRef.list({ pageToken }).then(listResult => {
+                const ignoredNames = [];
+                const promises = [];
 
-                    const entry = (bySha[sha] = bySha[sha] || { thumbnails: {} });
+                console.log("promisePage", pageToken, "got", { nextPageToken: listResult.nextPageToken, itemCount: listResult.items.length });
 
-                    if (!thumbnailSize) {
-                        promises.push(
-                            ref.getMetadata().then(metadata => entry.metadata = metadata)
-                        );
+                listResult.items.map(ref => {
+                    const match = ref.name.match(/sha-256-(\w{64})(?:_(\d+x\d+))?$/);
+                    if (match) {
+                        const sha = match[1];
+                        const thumbnailSize = match[2];
+
+                        const entry = (bySha[sha] = bySha[sha] || { thumbnails: {} });
+
+                        if (!thumbnailSize) {
+                            promises.push(
+                                ref.getMetadata().then(metadata => entry.metadata = metadata)
+                            );
+                        } else {
+                            entry.thumbnails[thumbnailSize] = ref.fullPath;
+                        }
                     } else {
-                        entry.thumbnails[thumbnailSize] = ref.fullPath;
+                        ignoredNames.push(ref.name);
                     }
-                } else {
-                    ignoredNames.push(ref.name);
+                });
+
+                if (ignoredNames.length > 0) {
+                    console.log("Ignored names:", { ignoredNames });
                 }
+
+                if (listResult.nextPageToken) {
+                    promises.push(promisePage(listResult.nextPageToken));
+                }
+
+                return Promise.all(promises);
             });
+        };
 
-            if (ignoredNames.length > 0) {
-                console.log("Ignored names:", { ignoredNames });
-            }
-
-            return Promise.all(promises).then(() => this.setState({ bySha }));
-        }).catch(e => console.log('storage list failed', e));
+        promisePage(null)
+            .then(() => this.setState({ bySha }))
+            .catch(e => console.log('storage list failed', e));
     }
 
     findExistingImage(path) {
@@ -165,7 +181,7 @@ class ImageList extends Component {
     }
 
     render() {
-        const { bySha } = this.state;
+        const { bySha, showGrid } = this.state;
 
         return (
             <div>
@@ -200,10 +216,15 @@ class ImageList extends Component {
                     </ReactModal>
                 }
 
-                {bySha && (
+                <p>
+                    <input type={"checkbox"} checked={showGrid} onClick={() => this.setState({ showGrid: !showGrid })}/>
+                    Grid view
+                </p>
+
+                {bySha && !showGrid && (
                     <div>
                         <h2>List</h2>
-                        <ol>
+                        <ol className="imageList">
                             {Object.keys(bySha).sort().map(sha => {
                                 const entry = bySha[sha];
 
@@ -223,6 +244,23 @@ class ImageList extends Component {
                         </ol>
                     </div>
                 )}
+
+                {bySha && showGrid && <div>
+                    <ol className="imageGrid">
+                        {Object.keys(bySha).sort().map(sha => {
+                            const entry = bySha[sha];
+
+                            return (
+                                <li
+                                    key={sha}
+                                    onClick={() => this.setState({ openImage: sha })}
+                                >
+                                    <ImageIcon sha={sha} entry={entry}/>
+                                </li>
+                            );
+                        })}
+                    </ol>
+                </div>}
 
             </div>
         )

@@ -7,7 +7,7 @@ class Welcome extends Component {
             <div>
                 <h1>Kloakdæksler</h1>
 
-                <p>Let&apos; collect pictures of manhole covers! Some of them are so pretty!</p>
+                <p>Let&apos;s collect pictures of manhole covers! Some of them are so pretty!</p>
             </div>
         )
     }
