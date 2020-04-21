@@ -31,7 +31,8 @@ class ImageIcon extends Component {
         const { imageDownloadUrl, usingThumbnail } = this.state;
         if (!imageDownloadUrl) return "...";
 
-        const style = {};
+        const transform = `rotate(${1 * (this.props.dbData.rotateDegrees || 0)}deg)`;
+        const style = { transform };
 
         if (!usingThumbnail) {
             style.width = '200px';
@@ -39,18 +40,12 @@ class ImageIcon extends Component {
             style.border = '1px solid red';
         }
 
-        const transform = `rotate(${1 * (this.props.dbData.rotateDegrees || 0)}deg)`;
-
         return (
             <div>
                 <p className="imageText">{this.props.dbData.text || ''}</p>
                 <p className="imageTags">{(this.props.dbData.tags || []).join(' ')}</p>
                 {/*<code>{JSON.stringify(this.props.dbData)}</code>*/}
-                <img
-                    style={style}
-                    src={imageDownloadUrl}
-                    style={{transform: transform}}
-                />
+                <img style={style} src={imageDownloadUrl}/>
             </div>
         );
     }

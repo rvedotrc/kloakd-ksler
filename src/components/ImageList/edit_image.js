@@ -77,9 +77,6 @@ class EditImage extends Component {
         };
 
         switch (e.key + ":" + getModifiers()) {
-            case 'Escape:':
-                this.props.onClose();
-                break;
             case '0:':
                 this.resetRotation();
                 break;
@@ -89,9 +86,6 @@ class EditImage extends Component {
             case 'ArrowRight:': rotate(+10); break;
             case 'ArrowRight:S': rotate(+90); break;
             case 'ArrowRight:A': rotate(+1); break;
-            case 'Enter:':
-                this.saveAndClose();
-                break;
         }
     }
 
@@ -114,6 +108,26 @@ class EditImage extends Component {
         });
     }
 
+    onFormKeyDown(e) {
+        const getModifiers = () => [
+            (e.shiftKey ? 'S' : ''),
+            (e.ctrlKey ? 'C' : ''),
+            (e.altKey ? 'A' : ''),
+            (e.metaKey ? 'M' : ''),
+        ].filter(e => e).join("");
+
+        switch (e.key + ":" + getModifiers()) {
+            case 'Escape:':
+                e.preventDefault();
+                this.props.onClose();
+                break;
+            case 'Enter:':
+                e.preventDefault();
+                this.onSubmit();
+                break;
+        }
+    }
+
     render() {
         const { imageDownloadUrl, rotateDegrees, dbData } = this.state;
         if (!imageDownloadUrl) return null;
@@ -123,11 +137,10 @@ class EditImage extends Component {
 
         return (
             <div>
-                <h1>{this.props.sha}</h1>
-
                 <form
                     onSubmit={(e) => { e.preventDefault();this.onSubmit(); }}
                     onReset={this.props.onClose}
+                    onKeyDown={e => this.onFormKeyDown(e)}
                     >
 
                     <p>
@@ -138,6 +151,7 @@ class EditImage extends Component {
                             size={50}
                             value={this.state.textValue}
                             onChange={e => this.setState({ textValue: e.target.value })}
+                            autoFocus={true}
                         />
                         <span style={{marginLeft: '1em'}}>
                             (text that is actually part of the design)
@@ -168,15 +182,10 @@ class EditImage extends Component {
                     </p>
 
                     <p>
-                        <button
-                            onKeyDown={e => this.onKeyDown(e)}
-                        >Rotate</button>
-                    </p>
-
-                    <p>
+                        <input type="button" value="Rotate" onKeyDown={e => this.onKeyDown(e)}/>
                         <input type="submit" value="Save"/>
                         <input type="reset" value="Cancel"/>
-                        <button onClick={() => this.confirmThenDelete()} className="danger">Delete</button>
+                        <input type="button" value="Delete" onClick={() => this.confirmThenDelete()} className="danger"/>
                     </p>
 
                 </form>
