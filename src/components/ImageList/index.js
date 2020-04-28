@@ -79,7 +79,10 @@ class ImageList extends Component {
         };
 
         promisePage(null)
-            .then(() => this.setState({ bySha }))
+            .then(() => {
+                this.setState({ bySha });
+                this.runFilter(bySha, this.state.filterText || '');
+            })
             .catch(e => console.log('storage list failed', e));
     }
 
@@ -201,8 +204,48 @@ class ImageList extends Component {
         this.setState({ bySha });
     }
 
+    onUpdateFilter(newText) {
+        this.setState({ filterText: newText });
+
+        window.setTimeout(() => {
+            if ((this.state.effectiveFilterValue || '') === newText) return;
+
+            this.runFilter(this.state.bySha, newText);
+        }, 200);
+    }
+
+    runFilter(bySha, filterText) {
+        const parts = filterText.trim().split(/\s+/);
+        // console.log({ parts });
+        const dbValue = this.state.dbValue || {};
+        const shaFilter = {};
+
+        Object.keys(bySha).map(sha => {
+            // const image = bySha[sha];
+            const dbData = dbValue[sha] || {};
+            // console.log({ sha, image, dbData });
+
+            const matches = parts.every(part => {
+                const invert = part.startsWith('-');
+                const term = part.replace(/^-/, '');
+
+                const matchesTerm = (
+                    (dbData.text || '').includes(term)
+                    ||
+                    (dbData.tags || []).some(tag => tag.includes(term))
+                );
+
+                return !!matchesTerm != !!invert;
+            });
+
+            shaFilter[sha] = matches;
+        });
+
+        this.setState({ shaFilter, effectiveFilterValue: filterText });
+    }
+
     render() {
-        const { bySha, showGrid, dbValue } = this.state;
+        const { bySha, shaFilter, showGrid, dbValue } = this.state;
 
         return (
             <div>
@@ -240,17 +283,29 @@ class ImageList extends Component {
                     Grid view
                 </p>
 
+                <p>
+                    Filter:{' '}
+                    <input
+                        type="text"
+                        size={50}
+                        value={this.state.filterText || ''}
+                        onChange={e => this.onUpdateFilter(e.target.value)}
+                    />
+                </p>
+
                 {bySha && !showGrid && (
                     <div>
                         <h2>List</h2>
                         <ol className="imageList">
                             {Object.keys(bySha).sort().map(sha => {
                                 const entry = bySha[sha];
+                                const matches = (!shaFilter || shaFilter[sha]);
 
                                 return (
                                     <li
                                         key={sha}
                                         onClick={() => this.setState({ openImage: sha })}
+                                        className={matches ? '' : 'hidden'}
                                     >
                                         {sha}
                                         {' '}
@@ -268,11 +323,13 @@ class ImageList extends Component {
                     <ol className="imageGrid">
                         {Object.keys(bySha).sort().map(sha => {
                             const entry = bySha[sha];
+                            const matches = (!shaFilter || shaFilter[sha]);
 
                             return (
                                 <li
                                     key={sha}
                                     onClick={() => this.setState({ openImage: sha })}
+                                    className={matches ? '' : 'hidden'}
                                 >
                                     <ImageIcon sha={sha} entry={entry} dbData={dbValue[sha] || {}}/>
                                 </li>
