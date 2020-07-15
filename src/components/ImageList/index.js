@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 
-import Dropzone from 'react-dropzone'
 import PropTypes from "prop-types";
 import ReactModal from 'react-modal';
 
@@ -86,116 +85,6 @@ class ImageList extends Component {
             .catch(e => console.log('storage list failed', e));
     }
 
-    findExistingImage(path) {
-        if (!this.state) return;
-
-        const { imageList } = this.state;
-        if (!imageList) return;
-
-        return imageList.find(image => image.fullPath == path);
-    }
-
-    startUpload(job) {
-        const { id, file, path } = job;
-
-        const metadata = {
-            contentType: file.type,
-            customMetadata: {
-                originalName: file.name,
-                originalLastModified: "" + file.lastModified,
-            },
-        };
-
-        const uploadTask = firebase.storage().ref().child(path)
-            .put(file, metadata);
-
-        // pause, resume, cancel
-
-        uploadTask.on(
-            firebase.storage.TaskEvent.STATE_CHANGED,
-            snapshot => {
-                var percent = snapshot.bytesTransferred / snapshot.totalBytes * 100;
-                console.log("file", path, `upload progress is ${percent}%`);
-            },
-            error => {
-                console.log("file", path, "upload failed:", error);
-                this.removeUpload(id);
-            },
-            () => {
-                console.log("file", path, "upload complete. woot!");
-                this.removeUpload(id);
-            },
-        );
-
-        return uploadTask;
-    }
-
-    enqueueUpload(file, path) {
-        const id = new Date().getTime();
-        const job = { id, file, path };
-        console.log("enqueue upload", job);
-        this.state.queuedUploads.push(job);
-        this.maybeStartUpload();
-    }
-
-    removeUpload(id) {
-        const index = this.state.uploadTasks.findIndex(job => job.id === id);
-        if (index < 0) return;
-
-        const job = this.state.uploadTasks[index];
-
-        console.log({
-            uploadTasks: this.state.uploadTasks,
-            id,
-            index,
-            job,
-        });
-
-        console.log("Upload completed/failed", job);
-
-        this.state.uploadTasks.splice(index, 1);
-        this.maybeStartUpload();
-    }
-
-    maybeStartUpload() {
-        if (this.state.queuedUploads.length === 0) return;
-        if (this.state.uploadTasks.length >= 5) return;
-
-        const job = this.state.queuedUploads.shift();
-        console.log("Starting upload", job);
-        this.state.uploadTasks.push(job);
-        return this.startUpload(job);
-    }
-
-    uploadFiles(files) {
-        console.log("files =", files);
-
-        files.map(file => {
-            file.arrayBuffer().then(buffer => {
-                return crypto.subtle.digest('SHA-256', buffer);
-            }).then(digestBuffer => {
-                const digestArray = Array.from(new Uint8Array(digestBuffer));
-                const digestString = digestArray.map(b => b.toString(16).padStart(2, '0')).join('');
-                console.log({ file });
-                console.log("file", file.name, "has digest", digestString);
-
-                const path = `user/${this.props.user.uid}/images/sha-256-${digestString}`;
-
-                const existingImage = this.findExistingImage(path);
-                console.log({ existingImage });
-
-                if (existingImage && existingImage.metadata.timeCreated > '2020-04-19T17:50:') {
-                    console.log(`Declining to upload ${file.path} because it already exists at ${path}`, existingImage);
-                    return;
-                }
-
-                return this.enqueueUpload(file, path);
-            }).catch(error => {
-                console.log("error while processing file", file.name, ":", error);
-            });
-        });
-    }
-
     shaDeleted(sha) {
         const { bySha } = this.state;
         if (!bySha) return;
@@ -249,18 +138,7 @@ class ImageList extends Component {
 
         return (
             <div>
-                <h1>Image List / Upload</h1>
-
-                <Dropzone onDrop={this.uploadFiles.bind(this)}>
-                    {({getRootProps, getInputProps}) => (
-                        <section>
-                            <div {...getRootProps()}>
-                                <input {...getInputProps()} />
-                                <p>Feed me, Seymour! Drop your pictures here, or click to choose some files. Nom nom nom.</p>
-                            </div>
-                        </section>
-                    )}
-                </Dropzone>
+                <h1>Image List</h1>
 
                 {
                     this.state.openImage && <ReactModal

@@ -11,6 +11,8 @@ class WorkspaceBar extends Component {
             <div id={'WorkspaceBar'}>
                 <button onClick={()=>{this.switchTabTo('startTab')}}>Home</button>
                 &nbsp;
+                <button onClick={()=>{this.switchTabTo('uploadTab')}}>Upload</button>
+                &nbsp;
                 <button onClick={()=>{this.switchTabTo('imageListTab')}}>Images</button>
                 {/*&nbsp;*/}
                 {/*<button onClick={()=>{this.switchTabTo('verbListTab')}}>{t('workspace_bar.list_of_verbs')}</button>*/}

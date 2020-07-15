@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import Welcome from '../Welcome';
 import WorkspaceBar from '../WorkspaceBar';
 import ImageList from "../ImageList";
+import Upload from "../Upload";
 
 class Workspace extends Component {
     constructor(props) {
@@ -28,6 +29,9 @@ class Workspace extends Component {
                 <div className="container">
                     {(selectedTab === 'startTab') && (
                         <Welcome/>
+                    )}
+                    {(selectedTab === 'uploadTab') && (
+                        <Upload user={user}/>
                     )}
                     {(selectedTab === 'imageListTab') && (
                         <ImageList user={user}/>
