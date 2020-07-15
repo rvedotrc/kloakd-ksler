@@ -10,6 +10,8 @@ class Upload extends Component {
         this.state = {
             queuedUploads: [],
             uploadTasks: [],
+            forceReupload: false,
+            dryRun: false,
         };
     }
 
@@ -174,11 +176,21 @@ class Upload extends Component {
 
                 const path = `user/${this.props.user.uid}/images/sha-256-${digestString}`;
 
-                const existingImage = this.findExistingImage(path);
-                console.log({ existingImage });
+                const existingImage = this.state.bySha[digestString];
 
-                if (existingImage && existingImage.metadata.timeCreated > '2020-04-19T17:50:') {
-                    console.log(`Declining to upload ${file.path} because it already exists at ${path}`, existingImage);
+                if (existingImage) {
+                    if (this.state.forceReupload) {
+                        console.log(`Uploading ${file.path} even though it already exists at ${path}`, existingImage);
+                    } else {
+                        console.log(`Declining to upload ${file.path} because it already exists at ${path}`, existingImage);
+                        return;
+                    }
+                } else {
+                    console.debug(`No existing image found for ${digestString}, continuing`);
+                }
+
+                if (this.state.dryRun) {
+                    console.log(`Would upload ${file.path} but dryRun is enabled`);
                     return;
                 }
 
@@ -190,21 +202,39 @@ class Upload extends Component {
     }
 
     render() {
+        const { bySha, forceReupload, dryRun } = this.state;
+
         return (
             <div>
 
                 <h1>Upload Images</h1>
 
-                <Dropzone onDrop={this.uploadFiles.bind(this)}>
-                    {({getRootProps, getInputProps}) => (
-                        <section>
-                            <div {...getRootProps()}>
-                                <input {...getInputProps()} />
-                                <p>Feed me, Seymour! Drop your pictures here, or click to choose some files. Nom nom nom.</p>
-                            </div>
-                        </section>
-                    )}
-                </Dropzone>
+                {!bySha && (
+                    <p>Loading file list...</p>
+                )}
+
+                {bySha && (
+                    <Dropzone onDrop={files => this.uploadFiles(files)}>
+                        {({getRootProps, getInputProps}) => (
+                            <section>
+                                <div {...getRootProps()}>
+                                    <input {...getInputProps()} />
+                                    <p>Feed me, Seymour! Drop your pictures here, or click to choose some files. Nom nom nom.</p>
+                                </div>
+                            </section>
+                        )}
+                    </Dropzone>
+                )}
+
+                <p>
+                    <input type={"checkbox"} checked={forceReupload} onChange={() => this.setState({ forceReupload: !forceReupload })}/>
+                    Force re-upload if already present
+                </p>
+
+                <p>
+                    <input type={"checkbox"} checked={dryRun} onChange={() => this.setState({ dryRun: !dryRun })}/>
+                    Dry run
+                </p>
 
             </div>
         )
