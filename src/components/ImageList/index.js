@@ -12,8 +12,6 @@ class ImageList extends Component {
         super(props);
         this.state = {
             showGrid: true,
-            queuedUploads: [],
-            uploadTasks: [],
             openImage: null,
         };
     }

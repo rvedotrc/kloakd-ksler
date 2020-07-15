@@ -1,15 +1,44 @@
-import React, { Component } from 'react';
+import * as React from 'react';
 
 import Dropzone from 'react-dropzone'
-import PropTypes from "prop-types";
 
-class Upload extends Component {
+declare const firebase: typeof import('firebase');
 
-    constructor(props) {
+type Props = {
+    user: firebase.User;
+};
+
+type State = {
+    jobs: UploadJob[];
+    forceReupload: boolean;
+    dryRun: boolean;
+    bySha?: Map<string, FileGroup>;
+    dbValue?: boolean;
+    ref?: firebase.database.Reference;
+    reRenderTimer?: number;
+};
+
+type UploadJob = {
+    id: number;
+    file: File;
+    path: string;
+    state: "queued" | "running" | "failed" | "complete";
+    percent?: number;
+    error?: Error;
+};
+
+type FileGroup = {
+    thumbnails: Map<string, string>;
+    metadata?: boolean;
+};
+
+class Upload extends React.Component<Props, State> {
+
+    constructor(props: Props) {
         super(props);
+
         this.state = {
-            queuedUploads: [],
-            uploadTasks: [],
+            jobs: [],
             forceReupload: false,
             dryRun: false,
         };
@@ -31,14 +60,14 @@ class Upload extends Component {
     readStorage() {
         var imagesRef = firebase.storage().ref().child(`user/${this.props.user.uid}/images`);
 
-        const bySha = {};
+        const bySha = new Map<string, FileGroup>();
 
-        const promisePage = pageToken => {
+        const promisePage = (pageToken: string | null): Promise<any> => {
             console.log("promisePage", pageToken);
 
             return imagesRef.list({ pageToken }).then(listResult => {
-                const ignoredNames = [];
-                const promises = [];
+                const ignoredNames: string[] = [];
+                const promises: Promise<any>[] = [];
 
                 console.log("promisePage", pageToken, "got", { nextPageToken: listResult.nextPageToken, itemCount: listResult.items.length });
 
@@ -48,14 +77,18 @@ class Upload extends Component {
                         const sha = match[1];
                         const thumbnailSize = match[2];
 
-                        const entry = (bySha[sha] = bySha[sha] || { thumbnails: {} });
+                        if (!bySha.has(sha)) {
+                            bySha.set(sha, { thumbnails: new Map<string, string>() })
+                        }
+
+                        const entry = bySha.get(sha) as FileGroup;
 
                         if (!thumbnailSize) {
                             promises.push(
                                 ref.getMetadata().then(metadata => entry.metadata = metadata)
                             );
                         } else {
-                            entry.thumbnails[thumbnailSize] = ref.fullPath;
+                            entry.thumbnails.set(thumbnailSize, ref.fullPath);
                         }
                     } else {
                         ignoredNames.push(ref.name);
@@ -81,17 +114,12 @@ class Upload extends Component {
             .catch(e => console.log('storage list failed', e));
     }
 
-    findExistingImage(path) {
-        if (!this.state) return;
+    startUpload(job: UploadJob) {
+        const { file, path } = job;
 
-        const { imageList } = this.state;
-        if (!imageList) return;
-
-        return imageList.find(image => image.fullPath == path);
-    }
-
-    startUpload(job) {
-        const { id, file, path } = job;
+        job.state = "running";
+        job.percent = 0;
+        this.shouldReRender();
 
         const metadata = {
             contentType: file.type,
@@ -110,60 +138,69 @@ class Upload extends Component {
             firebase.storage.TaskEvent.STATE_CHANGED,
             snapshot => {
                 var percent = snapshot.bytesTransferred / snapshot.totalBytes * 100;
-                console.log("file", path, `upload progress is ${percent}%`);
+                // console.log("file", path, `upload progress is ${percent}%`);
+                job.percent = percent;
+                this.shouldReRender();
             },
             error => {
-                console.log("file", path, "upload failed:", error);
-                this.removeUpload(id);
+                // console.log("file", path, "upload failed:", error);
+                job.state = "failed";
+                job.error = error;
+                this.maybeStartUpload();
+                this.shouldReRender();
             },
             () => {
-                console.log("file", path, "upload complete. woot!");
-                this.removeUpload(id);
+                // console.log("file", path, "upload complete. woot!");
+                job.state = "complete";
+                this.maybeStartUpload();
+                this.shouldReRender();
             },
         );
 
         return uploadTask;
     }
 
-    enqueueUpload(file, path) {
+    enqueueUpload(file: File, path: string) {
         const id = new Date().getTime();
-        const job = { id, file, path };
-        console.log("enqueue upload", job);
-        this.state.queuedUploads.push(job);
+        const job: UploadJob = { id, file, path, state: "queued" };
+        // console.log("enqueue upload", job);
+        this.state.jobs.push(job);
+        this.shouldReRender();
         this.maybeStartUpload();
     }
 
-    removeUpload(id) {
-        const index = this.state.uploadTasks.findIndex(job => job.id === id);
-        if (index < 0) return;
+    shouldReRender() {
+        this.setState((prevState) => {
+            if (prevState.reRenderTimer) return prevState;
 
-        const job = this.state.uploadTasks[index];
+            const reRenderTimer = window.setTimeout(
+                () => {
+                    this.setState({ reRenderTimer: undefined });
+                    this.forceUpdate();
+                },
+                100,
+            );
 
-        console.log({
-            uploadTasks: this.state.uploadTasks,
-            id,
-            index,
-            job,
+            return { ...prevState, reRenderTimer };
         });
-
-        console.log("Upload completed/failed", job);
-
-        this.state.uploadTasks.splice(index, 1);
-        this.maybeStartUpload();
     }
 
     maybeStartUpload() {
-        if (this.state.queuedUploads.length === 0) return;
-        if (this.state.uploadTasks.length >= 5) return;
+        const nActive = this.state.jobs.filter(job => job.state === 'running').length;
+        if (nActive >= 5) return;
 
-        const job = this.state.queuedUploads.shift();
-        console.log("Starting upload", job);
-        this.state.uploadTasks.push(job);
+        const job = this.state.jobs.find(job => job.state === 'queued');
+        if (!job) return;
+
+        // console.log("Starting upload", job);
         return this.startUpload(job);
     }
 
-    uploadFiles(files) {
-        console.log("files =", files);
+    uploadFiles(files: File[]) {
+        const { bySha } = this.state;
+        if (!bySha) return;
+
+        // console.log("files =", files);
 
         files.map(file => {
             file.arrayBuffer().then(buffer => {
@@ -176,13 +213,13 @@ class Upload extends Component {
 
                 const path = `user/${this.props.user.uid}/images/sha-256-${digestString}`;
 
-                const existingImage = this.state.bySha[digestString];
+                const existingImage = bySha.get(digestString);
 
                 if (existingImage) {
                     if (this.state.forceReupload) {
-                        console.log(`Uploading ${file.path} even though it already exists at ${path}`, existingImage);
+                        console.log(`Uploading ${file.name} even though it already exists at ${path}`, existingImage);
                     } else {
-                        console.log(`Declining to upload ${file.path} because it already exists at ${path}`, existingImage);
+                        console.log(`Declining to upload ${file.name} because it already exists at ${path}`, existingImage);
                         return;
                     }
                 } else {
@@ -190,7 +227,7 @@ class Upload extends Component {
                 }
 
                 if (this.state.dryRun) {
-                    console.log(`Would upload ${file.path} but dryRun is enabled`);
+                    console.log(`Would upload ${file.name} but dryRun is enabled`);
                     return;
                 }
 
@@ -236,14 +273,31 @@ class Upload extends Component {
                     Dry run
                 </p>
 
+                <table>
+                    <thead>
+                        <th>ID</th>
+                        <th>Local file</th>
+                        <th>State</th>
+                        <th>Progress</th>
+                        <th>Error</th>
+                    </thead>
+                    <tbody>
+                        {this.state.jobs.map(job => (
+                            <tr key={job.id}>
+                                <td>{job.id}</td>
+                                <td>{job.file.name}</td>
+                                <td>{job.state}</td>
+                                <td>{job.percent && `${job.percent}%`}</td>
+                                <td>{job.error}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+
             </div>
         )
     }
 
 }
-
-Upload.propTypes = {
-    user: PropTypes.object.isRequired
-};
 
 export default Upload;
