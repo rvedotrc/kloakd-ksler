@@ -24,7 +24,7 @@ type UploadJob = {
     path: string;
     state: "queued" | "running" | "failed" | "complete";
     percent?: number;
-    error?: Error;
+    error?: Error | string;
 };
 
 type FileGroup = {
@@ -196,6 +196,13 @@ class Upload extends React.Component<Props, State> {
         return this.startUpload(job);
     }
 
+    addTerminalJob(file: File, state: "complete" | "failed", path: string, error: string) {
+        const id = new Date().getTime();
+        const job: UploadJob = { id, file, path, state, error };
+        this.state.jobs.push(job);
+        this.shouldReRender();
+    }
+
     uploadFiles(files: File[]) {
         const { bySha } = this.state;
         if (!bySha) return;
@@ -220,6 +227,7 @@ class Upload extends React.Component<Props, State> {
                         console.log(`Uploading ${file.name} even though it already exists at ${path}`, existingImage);
                     } else {
                         console.log(`Declining to upload ${file.name} because it already exists at ${path}`, existingImage);
+                        this.addTerminalJob(file, "complete", path, `Declined to upload because the target already exists`);
                         return;
                     }
                 } else {
@@ -228,12 +236,14 @@ class Upload extends React.Component<Props, State> {
 
                 if (this.state.dryRun) {
                     console.log(`Would upload ${file.name} but dryRun is enabled`);
+                    this.addTerminalJob(file, "complete", path, "Declined to upload because dryRun was enabled");
                     return;
                 }
 
                 return this.enqueueUpload(file, path);
             }).catch(error => {
                 console.log("error while processing file", file.name, ":", error);
+                this.addTerminalJob(file, "failed", "?", error);
             });
         });
     }
