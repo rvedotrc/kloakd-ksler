@@ -251,10 +251,15 @@ class Upload extends React.Component<Props, State> {
                 )}
 
                 {bySha && (
-                    <Dropzone onDrop={files => this.uploadFiles(files)}>
-                        {({getRootProps, getInputProps}) => (
+                    <Dropzone
+                        onDrop={files => this.uploadFiles(files)}
+                        accept=".jpg,.png"
+                    >
+                        {({getRootProps, getInputProps, isDragActive}) => (
                             <section>
-                                <div {...getRootProps()}>
+                                <div {...getRootProps()}
+                                    className={isDragActive ? "dropZone dropZoneActive" : "dropZone dropZoneInactive"}
+                                    >
                                     <input {...getInputProps()} />
                                     <p>Feed me, Seymour! Drop your pictures here, or click to choose some files. Nom nom nom.</p>
                                 </div>
