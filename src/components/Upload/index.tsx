@@ -288,26 +288,28 @@ class Upload extends React.Component<Props, State> {
                     Dry run
                 </p>
 
-                <table>
-                    <thead>
-                        <th>ID</th>
-                        <th>Local file</th>
-                        <th>State</th>
-                        <th>Progress</th>
-                        <th>Error</th>
-                    </thead>
-                    <tbody>
-                        {this.state.jobs.map(job => (
-                            <tr key={job.id}>
-                                <td>{job.id}</td>
-                                <td>{job.file.name}</td>
-                                <td>{job.state}</td>
-                                <td>{job.percent && `${job.percent}%`}</td>
-                                <td>{job.error}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                {this.state.jobs[0] && (
+                    <table>
+                        <thead>
+                            <th>ID</th>
+                            <th>Local file</th>
+                            <th>State</th>
+                            <th>Progress</th>
+                            <th>Error</th>
+                        </thead>
+                        <tbody>
+                            {this.state.jobs.map(job => (
+                                <tr key={job.id}>
+                                    <td>{job.id}</td>
+                                    <td>{job.file.name}</td>
+                                    <td>{job.state}</td>
+                                    <td>{job.percent && `${job.percent}%`}</td>
+                                    <td>{job.error}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
 
             </div>
         )
