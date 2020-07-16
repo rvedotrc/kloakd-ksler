@@ -192,7 +192,6 @@ class EditImage extends React.Component<Props, State> {
                                 const tagsArray = Array.from(
                                     tagsValue.toLowerCase().match(/[\wæøå:]+/g) || []
                                 )
-                                    .map(v => v[0])
                                     .filter(t => t.length > 0)
                                     .sort();
                                 this.setState({ tagsValue, tagsArray });
