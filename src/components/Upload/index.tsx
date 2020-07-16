@@ -2,6 +2,9 @@ import * as React from 'react';
 
 import Dropzone from 'react-dropzone'
 
+import {ImageFile, ImageFileGroup, ImageFileGroupMap} from '../../types';
+import fileReader from "../../file_reader";
+
 declare const firebase: typeof import('firebase');
 
 type Props = {
@@ -12,7 +15,7 @@ type State = {
     jobs: UploadJob[];
     forceReupload: boolean;
     dryRun: boolean;
-    bySha?: Map<string, FileGroup>;
+    bySha?: ImageFileGroupMap;
     dbValue?: boolean;
     ref?: firebase.database.Reference;
     reRenderTimer?: number;
@@ -25,11 +28,6 @@ type UploadJob = {
     state: "queued" | "running" | "failed" | "complete";
     percent?: number;
     error?: Error | string;
-};
-
-type FileGroup = {
-    thumbnails: Map<string, string>;
-    metadata?: boolean;
 };
 
 class Upload extends React.Component<Props, State> {
@@ -58,58 +56,9 @@ class Upload extends React.Component<Props, State> {
     }
 
     readStorage() {
-        var imagesRef = firebase.storage().ref().child(`user/${this.props.user.uid}/images`);
-
-        const bySha = new Map<string, FileGroup>();
-
-        const promisePage = (pageToken: string | null): Promise<any> => {
-            console.log("promisePage", pageToken);
-
-            return imagesRef.list({ pageToken }).then(listResult => {
-                const ignoredNames: string[] = [];
-                const promises: Promise<any>[] = [];
-
-                console.log("promisePage", pageToken, "got", { nextPageToken: listResult.nextPageToken, itemCount: listResult.items.length });
-
-                listResult.items.map(ref => {
-                    const match = ref.name.match(/sha-256-(\w{64})(?:_(\d+x\d+))?$/);
-                    if (match) {
-                        const sha = match[1];
-                        const thumbnailSize = match[2];
-
-                        if (!bySha.has(sha)) {
-                            bySha.set(sha, { thumbnails: new Map<string, string>() })
-                        }
-
-                        const entry = bySha.get(sha) as FileGroup;
-
-                        if (!thumbnailSize) {
-                            promises.push(
-                                ref.getMetadata().then(metadata => entry.metadata = metadata)
-                            );
-                        } else {
-                            entry.thumbnails.set(thumbnailSize, ref.fullPath);
-                        }
-                    } else {
-                        ignoredNames.push(ref.name);
-                    }
-                });
-
-                if (ignoredNames.length > 0) {
-                    console.log("Ignored names:", { ignoredNames });
-                }
-
-                if (listResult.nextPageToken) {
-                    promises.push(promisePage(listResult.nextPageToken));
-                }
-
-                return Promise.all(promises);
-            });
-        };
-
-        promisePage(null)
-            .then(() => {
-                this.setState({ bySha });
+        fileReader(this.props.user, false)
+            .then(imageFileGroupMap => {
+                this.setState({ bySha: imageFileGroupMap });
             })
             .catch(e => console.log('storage list failed', e));
     }
@@ -222,7 +171,7 @@ class Upload extends React.Component<Props, State> {
 
                 const existingImage = bySha.get(digestString);
 
-                if (existingImage) {
+                if (existingImage?.main) {
                     if (this.state.forceReupload) {
                         console.log(`Uploading ${file.name} even though it already exists at ${path}`, existingImage);
                     } else {

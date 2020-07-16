@@ -1,19 +1,38 @@
-import React, { Component } from 'react';
+import * as React from 'react';
+import {ImageFileGroup} from "../../types";
 
-import PropTypes from "prop-types";
+declare const firebase: typeof import('firebase');
 
-class EditImage extends Component {
+type Props = {
+    user: firebase.User;
+    sha: string;
+    entry: ImageFileGroup;
+    onDelete: (sha: string) => void;
+    onClose: () => void;
+};
 
-    constructor(props) {
+type State = {
+    imageDownloadUrl: string;
+    dbData: any;
+    textValue: string;
+    tagsValue: string;
+    tagsArray: string[];
+    rotateDegrees: number;
+};
+
+class EditImage extends React.Component<Props, State> {
+
+    constructor(props: Props) {
         super(props);
-        this.state = {};
     }
 
     componentDidMount() {
         const entry = this.props.entry;
 
         try {
-            const fullPath = entry.thumbnails['1000x1000'] || entry.metadata.fullPath;
+            const fullPath = entry.thumbnails.get('1000x1000')?.path || entry.main?.metadata?.fullPath;
+            if (!fullPath) throw 'No thumbnail and no main path';
+
             const reference = firebase.storage().ref(fullPath);
 
             reference.getDownloadURL()
@@ -53,7 +72,7 @@ class EditImage extends Component {
             .catch(err => console.error("Error saving image data to db:", err));
     }
 
-    onKeyDown(e) {
+    onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
         // console.log({
         //     key: e.key,
         //     shiftKey: e.shiftKey,
@@ -69,7 +88,7 @@ class EditImage extends Component {
             (e.metaKey ? 'M' : ''),
         ].filter(e => e).join("");
 
-        const rotate = by => {
+        const rotate = (by: number) => {
             let rotateDegrees = this.state.rotateDegrees || 0;
             rotateDegrees = Math.floor(rotateDegrees + 360 + by) % 360;
             this.setState({ rotateDegrees });
@@ -95,20 +114,21 @@ class EditImage extends Component {
         const thumbnails = this.props.entry.thumbnails;
 
         Promise.all(
-            Object.values(thumbnails).map(fullPath =>
-                firebase.storage().ref(fullPath).delete()
+            Array.from(thumbnails.values()).map(thumbnail =>
+                firebase.storage().ref(thumbnail.path).delete()
             )
         ).then(() => {
-            return firebase.storage().ref(this.props.entry.metadata.fullPath).delete();
+            const path = this.props.entry.main?.metadata?.fullPath;
+            if (path) return firebase.storage().ref(path).delete();
         }).then(() => {
-            return firebase.database().ref(`users/${this.props.user.uid}/images/${this.props.sha}`).delete();
+            return firebase.database().ref(`users/${this.props.user.uid}/images/${this.props.sha}`).remove();
         }).then(() => {
             this.props.onDelete(this.props.sha);
             this.props.onClose();
         });
     }
 
-    onFormKeyDown(e) {
+    onFormKeyDown(e: React.KeyboardEvent<HTMLFormElement>) {
         const getModifiers = () => [
             (e.shiftKey ? 'S' : ''),
             (e.ctrlKey ? 'C' : ''),
@@ -129,6 +149,8 @@ class EditImage extends Component {
     }
 
     render() {
+        if (!this.state) return null;
+
         const { imageDownloadUrl, rotateDegrees, dbData } = this.state;
         if (!imageDownloadUrl) return null;
         if (!dbData) return null;
@@ -168,8 +190,8 @@ class EditImage extends Component {
                             onChange={e => {
                                 const tagsValue = e.target.value;
                                 const tagsArray = Array.from(
-                                        tagsValue.toLowerCase().matchAll(/[\wæøå:]+/g)
-                                    )
+                                    tagsValue.toLowerCase().match(/[\wæøå:]+/g) || []
+                                )
                                     .map(v => v[0])
                                     .filter(t => t.length > 0)
                                     .sort();
@@ -204,18 +226,11 @@ class EditImage extends Component {
                 <hr/>
 
                 <pre>{JSON.stringify(this.props.entry, null, 2)}</pre>
+                <pre>{JSON.stringify(Array.from(this.props.entry.thumbnails.keys()).sort())}</pre>
             </div>
         );
     }
 
 }
-
-EditImage.propTypes = {
-    user: PropTypes.object.isRequired,
-    sha: PropTypes.string.isRequired,
-    entry: PropTypes.object.isRequired,
-    onDelete: PropTypes.func.isRequired,
-    onClose: PropTypes.func.isRequired,
-};
 
 export default EditImage;
