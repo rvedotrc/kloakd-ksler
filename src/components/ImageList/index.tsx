@@ -168,29 +168,55 @@ class ImageList extends React.Component<Props, State> {
             return (
                 <div>
                     <h2>List</h2>
-                    <ol className="imageList">
-                        {list.map(entryAndMatches => {
-                            const entry = entryAndMatches.imageFileGroup;
-                            const matches = entryAndMatches.matches;
-                            const sha = entry.sha;
-                            const dbData = (dbValue[sha] || {}) as DBEntry;
 
-                            return (
-                                <li
-                                    key={sha}
-                                    onClick={() => this.setState({ openImageSha: sha })}
-                                    className={matches ? '' : 'hidden'}
-                                >
-                                    {sha}
-                                    {' '}
-                                    ({entry.main?.metadata?.size})
-                                    ({Array.from(entry.thumbnails.keys()).sort().join()})
-                                    ({JSON.stringify(entry.main?.metadata?.customMetadata)})
-                                    ({JSON.stringify(dbData)})
-                                </li>
-                            );
-                        })}
-                    </ol>
+                    <table className="imageList">
+                        <thead>
+                            <tr>
+                                <th>SHA</th>
+                                <th>Original Name</th>
+                                <th>Text</th>
+                                <th>Tags</th>
+
+                                {/* Debugging stuff below here */}
+                                <th>Size</th>
+                                <th>100</th>
+                                <th>200</th>
+                                <th>500</th>
+                                <th>1000</th>
+                                <th>2000</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {list.map(entryAndMatches => {
+                                const entry = entryAndMatches.imageFileGroup;
+                                const matches = entryAndMatches.matches;
+                                const sha = entry.sha;
+                                const dbData = (dbValue[sha] || {}) as DBEntry;
+
+                                return (
+                                    <tr
+                                        key={sha}
+                                        onClick={() => this.setState({ openImageSha: sha })}
+                                        className={matches ? '' : 'hidden'}
+                                    >
+                                        <td title={sha}>{sha.substr(0, 6)}</td>
+                                        <td>{entry.main?.metadata?.customMetadata.originalName}</td>
+                                        <td>{dbData.text}</td>
+                                        <td>{dbData.tags?.sort().join(" ")}</td>
+
+                                        {/* Debugging stuff below here */}
+                                        <td>{entry.main?.metadata?.size}</td>
+                                        <td>{entry.thumbnails.has('100x100') && 'Y'}</td>
+                                        <td>{entry.thumbnails.has('200x200') && 'Y'}</td>
+                                        <td>{entry.thumbnails.has('500x500') && 'Y'}</td>
+                                        <td>{entry.thumbnails.has('1000x1000') && 'Y'}</td>
+                                        <td>{entry.thumbnails.has('2000x2000') && 'Y'}</td>
+                                    </tr>
+                                );
+                            })}
+
+                        </tbody>
+                    </table>
                 </div>
             );
         }
