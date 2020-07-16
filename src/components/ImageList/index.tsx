@@ -106,7 +106,9 @@ class ImageList extends React.Component<Props, State> {
     getSortedList(bySha: ImageFileGroupMap, shaFilter: Map<string, boolean> | undefined) {
         return Array.from(bySha.values())
             .sort((a, b) => {
-                return a.sha.localeCompare(b.sha);
+                const k1 = (a.main?.metadata?.customMetadata.originalLastModified || "?") as string;
+                const k2 = (b.main?.metadata?.customMetadata.originalLastModified || "?") as string;
+                return k1.localeCompare(k2);
             }).map(imageFileGroup => {
                 return {
                     imageFileGroup,
