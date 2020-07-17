@@ -1,10 +1,15 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import * as React from 'react';
 
 import Workspace from '../Workspace';
 import LoginBar from '../LoginBar';
 
-class LoggedInBox extends Component {
+declare const firebase: typeof import('firebase');
+
+type Props = {
+    user: firebase.User;
+};
+
+class LoggedInBox extends React.Component<Props, never> {
     render() {
         return (
             <div>
@@ -14,9 +19,5 @@ class LoggedInBox extends Component {
         )
     }
 }
-
-LoggedInBox.propTypes = {
-    user: PropTypes.object.isRequired
-};
 
 export default LoggedInBox;

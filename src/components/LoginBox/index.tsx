@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
+import * as React from 'react';
 
 import LoginBar from '../LoginBar';
 import Welcome from '../Welcome';
 
-class LoginBox extends Component {
+class LoginBox extends React.Component<{}, never> {
     render() {
         return (
             <div>

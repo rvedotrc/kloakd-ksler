@@ -1,7 +1,12 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import * as React from 'react';
 
-class LoginBar extends Component {
+declare const firebase: typeof import('firebase');
+
+type Props = {
+    user?: firebase.User;
+};
+
+class LoginBar extends React.Component<Props, never> {
     signInWithGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
         firebase.auth().signInWithRedirect(provider);
@@ -29,7 +34,7 @@ class LoginBar extends Component {
                         <span>
                             Logged in as
                             {' '}
-                            <b>{this.props.user.displayName}</b>
+                            <b>{user.displayName}</b>
                         </span>
                         {' '}
                         <button onClick={this.signOut}>Log out</button>
@@ -39,13 +44,5 @@ class LoginBar extends Component {
         )
     }
 }
-
-LoginBar.propTypes = {
-    user: PropTypes.object
-};
-
-LoginBar.defaultProps = {
-    user: null
-};
 
 export default LoginBar;

@@ -1,29 +1,35 @@
-import React, { Component } from 'react';
+import * as React from 'react';
 
 import LoginBox from '../LoginBox';
 import LoggedInBox from '../LoggedInBox';
 
-class PageRoot extends Component {
-    constructor(props) {
+declare const firebase: typeof import('firebase');
+
+type State = {
+    loaded: boolean;
+    user: firebase.User | null;
+    unsubscribe?: firebase.Unsubscribe;
+};
+
+class PageRoot extends React.Component<{}, State> {
+    constructor(props: {}) {
         super(props);
-        this.state = { loaded: false };
+        this.state = { loaded: false, user: null };
     }
 
     componentDidMount() {
-        firebase.auth().onAuthStateChanged(user => {
-            if (this.state.ref) this.state.ref.off();
-
+        const unsubscribe = firebase.auth().onAuthStateChanged(user => {
             this.setState({
                 loaded: true,
                 user: user,
-                ref: null,
             });
         });
+
+        this.setState({ unsubscribe });
     }
 
     componentWillUnmount() {
-        if (this.state.ref) this.state.ref.off();
-        firebase.auth().off();
+        this.state?.unsubscribe?.();
     }
 
     render() {
@@ -44,4 +50,3 @@ class PageRoot extends Component {
 }
 
 export default PageRoot;
-
