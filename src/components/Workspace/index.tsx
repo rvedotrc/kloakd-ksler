@@ -1,20 +1,29 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import * as React from 'react';
 
 import Welcome from '../Welcome';
 import WorkspaceBar from '../WorkspaceBar';
 import ImageList from "../ImageList";
 import Upload from "../Upload";
 
-class Workspace extends Component {
-    constructor(props) {
+declare const firebase: typeof import('firebase');
+
+type Props = {
+    user: firebase.User;
+};
+
+type State = {
+    selectedTab: string;
+};
+
+class Workspace extends React.Component<Props, State> {
+    constructor(props: Props) {
         super(props);
         this.state = {
             selectedTab: 'startTab',
         };
     }
 
-    switchTabTo(newTab) {
+    switchTabTo(newTab: string) {
         this.setState({ selectedTab: newTab });
     }
 
@@ -41,9 +50,5 @@ class Workspace extends Component {
         )
     }
 }
-
-Workspace.propTypes = {
-    user: PropTypes.object.isRequired
-};
 
 export default Workspace;

@@ -1,8 +1,11 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import * as React from 'react';
 
-class WorkspaceBar extends Component {
-    switchTabTo(newTab) {
+type Props = {
+    onSwitchTab: (newTab: string) => void;
+};
+
+class WorkspaceBar extends React.Component<Props, never> {
+    switchTabTo(newTab: string) {
         this.props.onSwitchTab(newTab);
     }
 
@@ -28,9 +31,5 @@ class WorkspaceBar extends Component {
         )
     }
 }
-
-WorkspaceBar.propTypes = {
-    onSwitchTab: PropTypes.func.isRequired
-};
 
 export default WorkspaceBar;
