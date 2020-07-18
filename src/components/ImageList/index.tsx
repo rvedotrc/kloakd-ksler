@@ -139,6 +139,16 @@ class ImageList extends React.Component<Props, State> {
         );
     }
 
+    getDBEntry(dbValue: any, sha: string): DBEntry {
+        const entry = dbValue[sha] || {};
+
+        return {
+            text: entry.text || "",
+            tags: entry.tags || [],
+            rotateDegrees: entry.rotateDegrees || 0,
+        };
+    }
+
     renderFiles(bySha: ImageFileGroupMap, shaFilter: Map<string, boolean> | undefined, dbValue: any, showGrid: boolean) {
         const list = this.getSortedList(bySha, shaFilter);
 
@@ -157,7 +167,7 @@ class ImageList extends React.Component<Props, State> {
                                     onClick={() => this.setState({ openImageSha: sha })}
                                     className={matches ? '' : 'hidden'}
                                 >
-                                    <ImageIcon sha={sha} entry={entry} dbEntry={dbValue[sha] || {}}/>
+                                    <ImageIcon sha={sha} entry={entry} dbEntry={this.getDBEntry(dbValue, sha)}/>
                                 </li>
                             );
                         })}
@@ -191,7 +201,7 @@ class ImageList extends React.Component<Props, State> {
                                 const entry = entryAndMatches.imageFileGroup;
                                 const matches = entryAndMatches.matches;
                                 const sha = entry.sha;
-                                const dbData = (dbValue[sha] || {}) as DBEntry;
+                                const dbData = this.getDBEntry(dbValue, sha);
 
                                 return (
                                     <tr
@@ -202,7 +212,7 @@ class ImageList extends React.Component<Props, State> {
                                         <td title={sha}>{sha.substr(0, 6)}</td>
                                         <td>{entry.main?.metadata?.customMetadata.originalName}</td>
                                         <td>{dbData.text}</td>
-                                        <td>{dbData.tags?.sort().join(" ")}</td>
+                                        <td>{dbData.tags.sort().join(" ")}</td>
 
                                         {/* Debugging stuff below here */}
                                         <td>{entry.main?.metadata?.size}</td>
