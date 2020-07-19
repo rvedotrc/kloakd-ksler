@@ -72,43 +72,68 @@ class ImageIcon extends React.Component<Props, State> {
 
         const safeNaturalWidth = naturalWidth as number;
         const safeNaturalHeight = naturalHeight as number;
+        const smallerDimension = (safeNaturalWidth < safeNaturalHeight)
+            ? safeNaturalWidth : safeNaturalHeight;
 
         const degreesRotation = 1 * (this.props.dbEntry.rotateDegrees || 0);
 
-        if (this.props.dbEntry.tags.some(tag => tag === 'shape:circle')) {
-            const desiredRadius = 100;
-            const desiredSize = desiredRadius * 2;
+        const tags: Set<string> = new Set(this.props.dbEntry.tags);
 
-            const clipperId = "clipper-" + this.props.sha;
+        const desiredSize = 100;
+        const scaleBy = desiredSize / smallerDimension;
+        const clipperId = "clipper-" + this.props.sha;
 
-            // Looks horrible though
-            const scaleUp = (safeNaturalWidth < safeNaturalHeight)
-                ? (safeNaturalHeight / safeNaturalWidth)
-                : (safeNaturalWidth / safeNaturalHeight);
-
+        if (tags.has('shape:circle') && !tags.has('multiple')) {
             return (
                 <svg
                     width={desiredSize} height={desiredSize}
-                    viewBox={`-${desiredRadius} -${desiredRadius} ${desiredSize} ${desiredSize}`}
+                    viewBox={`-${desiredSize/2} -${desiredSize/2} ${desiredSize} ${desiredSize}`}
                     xmlnsXlink="http://www.w3.org/1999/xlink"
                 >
                     <defs>
                         <clipPath id={clipperId}>
-                            <circle cx="0" cy="0" r={desiredRadius}/>
+                            <circle cx="0" cy="0" r={desiredSize/2}/>
                         </clipPath>
                     </defs>
 
-                    <g clipPath={`url(#${clipperId})`}>
-                        <image
-                            href={imageDownloadUrl}
-                            width={safeNaturalWidth}
-                            height={safeNaturalHeight}
-                            transform={`
-                                scale(${scaleUp})
-                                translate(-${safeNaturalWidth/2} -${safeNaturalHeight/2})
-                                rotate(${degreesRotation} ${safeNaturalWidth/2} ${safeNaturalHeight/2})
-                            `}
-                        />
+                    <g transform={`rotate(${degreesRotation})`}>
+                        <g clipPath={`url(#${clipperId})`}>
+                            <g transform={`scale(${scaleBy}) translate(-${safeNaturalWidth/2} -${safeNaturalHeight/2})`}>
+                                <image
+                                    href={imageDownloadUrl}
+                                    width={safeNaturalWidth}
+                                    height={safeNaturalHeight}
+                                />
+                            </g>
+                        </g>
+                    </g>
+                </svg>
+            );
+        }
+
+        if ((tags.has('shape:square') || tags.has('shape:circleinsquare')) && !tags.has('multiple')) {
+            return (
+                <svg
+                    width={desiredSize} height={desiredSize}
+                    viewBox={`-${desiredSize/2} -${desiredSize/2} ${desiredSize} ${desiredSize}`}
+                    xmlnsXlink="http://www.w3.org/1999/xlink"
+                >
+                    <defs>
+                        <clipPath id={clipperId}>
+                            <rect x={-desiredSize/2} y={-desiredSize/2} width={desiredSize} height={desiredSize}/>
+                        </clipPath>
+                    </defs>
+
+                    <g transform={`rotate(${degreesRotation})`}>
+                        <g clipPath={`url(#${clipperId})`}>
+                            <g transform={`scale(${scaleBy}) translate(-${safeNaturalWidth/2} -${safeNaturalHeight/2})`}>
+                                <image
+                                    href={imageDownloadUrl}
+                                    width={safeNaturalWidth}
+                                    height={safeNaturalHeight}
+                                />
+                            </g>
+                        </g>
                     </g>
                 </svg>
             );
