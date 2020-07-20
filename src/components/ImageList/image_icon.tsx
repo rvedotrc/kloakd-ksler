@@ -85,57 +85,67 @@ class ImageIcon extends React.Component<Props, State> {
 
         if (tags.has('shape:circle') && !tags.has('multiple')) {
             return (
-                <svg
-                    width={desiredSize} height={desiredSize}
-                    viewBox={`-${desiredSize/2} -${desiredSize/2} ${desiredSize} ${desiredSize}`}
-                    xmlnsXlink="http://www.w3.org/1999/xlink"
-                >
-                    <defs>
-                        <clipPath id={clipperId}>
-                            <circle cx="0" cy="0" r={desiredSize/2}/>
-                        </clipPath>
-                    </defs>
+                <div className="imageIcon">
+                    <p className="imageText">{this.props.dbEntry.text || ''}</p>
+                    <p className="imageTags">{(this.props.dbEntry.tags || []).join(' ')}</p>
 
-                    <g transform={`rotate(${degreesRotation})`}>
-                        <g clipPath={`url(#${clipperId})`}>
-                            <g transform={`scale(${scaleBy}) translate(-${safeNaturalWidth/2} -${safeNaturalHeight/2})`}>
-                                <image
-                                    href={imageDownloadUrl}
-                                    width={safeNaturalWidth}
-                                    height={safeNaturalHeight}
-                                />
+                    <svg className="imageThumbnail shapeCircle"
+                        width={desiredSize} height={desiredSize}
+                        viewBox={`-${desiredSize/2} -${desiredSize/2} ${desiredSize} ${desiredSize}`}
+                        xmlnsXlink="http://www.w3.org/1999/xlink"
+                    >
+                        <defs>
+                            <clipPath id={clipperId}>
+                                <circle cx="0" cy="0" r={desiredSize/2}/>
+                            </clipPath>
+                        </defs>
+
+                        <g transform={`rotate(${degreesRotation})`}>
+                            <g clipPath={`url(#${clipperId})`}>
+                                <g transform={`scale(${scaleBy}) translate(-${safeNaturalWidth/2} -${safeNaturalHeight/2})`}>
+                                    <image
+                                        href={imageDownloadUrl}
+                                        width={safeNaturalWidth}
+                                        height={safeNaturalHeight}
+                                    />
+                                </g>
                             </g>
                         </g>
-                    </g>
-                </svg>
+                    </svg>
+                </div>
             );
         }
 
         if ((tags.has('shape:square') || tags.has('shape:circleinsquare')) && !tags.has('multiple')) {
             return (
-                <svg
-                    width={desiredSize} height={desiredSize}
-                    viewBox={`-${desiredSize/2} -${desiredSize/2} ${desiredSize} ${desiredSize}`}
-                    xmlnsXlink="http://www.w3.org/1999/xlink"
-                >
-                    <defs>
-                        <clipPath id={clipperId}>
-                            <rect x={-desiredSize/2} y={-desiredSize/2} width={desiredSize} height={desiredSize}/>
-                        </clipPath>
-                    </defs>
+                <div className="imageIcon">
+                    <p className="imageText">{this.props.dbEntry.text || ''}</p>
+                    <p className="imageTags">{(this.props.dbEntry.tags || []).join(' ')}</p>
 
-                    <g transform={`rotate(${degreesRotation})`}>
-                        <g clipPath={`url(#${clipperId})`}>
-                            <g transform={`scale(${scaleBy}) translate(-${safeNaturalWidth/2} -${safeNaturalHeight/2})`}>
-                                <image
-                                    href={imageDownloadUrl}
-                                    width={safeNaturalWidth}
-                                    height={safeNaturalHeight}
-                                />
+                    <svg className="imageThumbnail shapeSquare"
+                        width={desiredSize} height={desiredSize}
+                        viewBox={`-${desiredSize/2} -${desiredSize/2} ${desiredSize} ${desiredSize}`}
+                        xmlnsXlink="http://www.w3.org/1999/xlink"
+                    >
+                        <defs>
+                            <clipPath id={clipperId}>
+                                <rect x={-desiredSize/2} y={-desiredSize/2} width={desiredSize} height={desiredSize}/>
+                            </clipPath>
+                        </defs>
+
+                        <g transform={`rotate(${degreesRotation})`}>
+                            <g clipPath={`url(#${clipperId})`}>
+                                <g transform={`scale(${scaleBy}) translate(-${safeNaturalWidth/2} -${safeNaturalHeight/2})`}>
+                                    <image
+                                        href={imageDownloadUrl}
+                                        width={safeNaturalWidth}
+                                        height={safeNaturalHeight}
+                                    />
+                                </g>
                             </g>
                         </g>
-                    </g>
-                </svg>
+                    </svg>
+                </div>
             );
         }
 
@@ -149,11 +159,11 @@ class ImageIcon extends React.Component<Props, State> {
         }
 
         return (
-            <div>
+            <div className="imageIcon">
                 <p className="imageText">{this.props.dbEntry.text || ''}</p>
                 <p className="imageTags">{(this.props.dbEntry.tags || []).join(' ')}</p>
                 {/*<code>{JSON.stringify(this.props.dbData)}</code>*/}
-                <img style={style} src={imageDownloadUrl}/>
+                <img className="imageThumbnail shapeOther" style={style} src={imageDownloadUrl}/>
             </div>
         );
     }
