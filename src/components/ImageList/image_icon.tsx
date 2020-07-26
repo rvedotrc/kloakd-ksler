@@ -1,7 +1,6 @@
 import * as React from 'react';
 import {DBEntry, ImageFileGroup} from "../../types";
-
-declare const firebase: typeof import('firebase');
+import ImageDownloader from "./image_downloader";
 
 type Props = {
     sha: string;
@@ -10,68 +9,46 @@ type Props = {
 };
 
 type State = {
-    imageDownloadUrl?: string;
-    isMounted: boolean;
-    naturalWidth?: number;
-    naturalHeight?: number;
+    imageDownloadUrl: string;
+    naturalWidth: number;
+    naturalHeight: number;
 };
 
 class ImageIcon extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props);
-        this.state = {
-            isMounted: true,
-        };
     }
 
-    componentDidMount() {
-        const entry = this.props.entry;
-
-        try {
-            const thumbnailPath = entry.thumbnails.get('200x200')?.path;
-            const fullPath = thumbnailPath || entry.main?.metadata?.fullPath;
-            if (!fullPath) throw 'No thumbnail and no main';
-
-            const reference = firebase.storage().ref(fullPath);
-
-            reference.getDownloadURL()
-                .then(imageDownloadUrl => {
-                    if (this.state.isMounted) {
-                        this.setState({imageDownloadUrl});
-
-                        const img = document.createElement("img");
-                        img.addEventListener("load", () => {
-                            this.setState({
-                                naturalWidth: img.naturalWidth,
-                                naturalHeight: img.naturalHeight,
-                            });
-                        });
-                        img.setAttribute("src", imageDownloadUrl);
-                    }
-                })
-                .catch(error => console.log({error}));
-        } catch(e) {
-            console.log({ e });
-        }
-    }
-
-    componentWillUnmount(): void {
-        this.setState({ isMounted: false });
+    renderImageDownloader() {
+        return (
+            <ImageDownloader
+                sha={this.props.sha}
+                entry={this.props.entry}
+                dbEntry={this.props.dbEntry}
+                preferredThumbnail="200x200"
+                onUrl={imageDownloadUrl => this.setState({ imageDownloadUrl })}
+                onNaturalSize={(naturalWidth, naturalHeight) => this.setState({ naturalWidth, naturalHeight })}
+            />
+        );
     }
 
     render() {
-        if (!this.state) return "...";
+        const imageDownloadUrl = this.state?.imageDownloadUrl;
+        const naturalWidth = this.state?.naturalWidth;
+        const naturalHeight = this.state?.naturalHeight;
 
-        const { imageDownloadUrl, naturalWidth, naturalHeight } = this.state;
-        if (!imageDownloadUrl) return "...";
-
-        if (!naturalWidth || !naturalHeight) {
-            return "....";
+        if (!imageDownloadUrl || !naturalWidth || !naturalHeight) {
+            return (
+                <>
+                    {this.renderImageDownloader()}
+                    {imageDownloadUrl ? "...." : "..."}
+                </>
+            );
         }
 
-        const safeNaturalWidth = naturalWidth as number;
-        const safeNaturalHeight = naturalHeight as number;
+        const safeNaturalWidth = naturalWidth;
+        const safeNaturalHeight = naturalHeight;
         const smallerDimension = (safeNaturalWidth < safeNaturalHeight)
             ? safeNaturalWidth : safeNaturalHeight;
 
@@ -86,6 +63,8 @@ class ImageIcon extends React.Component<Props, State> {
         if (tags.has('shape:circle') && !tags.has('multiple')) {
             return (
                 <div className="imageIcon">
+                    {this.renderImageDownloader()}
+
                     <p className="imageText">{this.props.dbEntry.text || ''}</p>
                     <p className="imageTags">{(this.props.dbEntry.tags || []).join(' ')}</p>
 
@@ -119,6 +98,8 @@ class ImageIcon extends React.Component<Props, State> {
         if ((tags.has('shape:square') || tags.has('shape:circleinsquare')) && !tags.has('multiple')) {
             return (
                 <div className="imageIcon">
+                    {this.renderImageDownloader()}
+
                     <p className="imageText">{this.props.dbEntry.text || ''}</p>
                     <p className="imageTags">{(this.props.dbEntry.tags || []).join(' ')}</p>
 
@@ -154,6 +135,8 @@ class ImageIcon extends React.Component<Props, State> {
 
         return (
             <div className="imageIcon">
+                {this.renderImageDownloader()}
+
                 <p className="imageText">{this.props.dbEntry.text || ''}</p>
                 <p className="imageTags">{(this.props.dbEntry.tags || []).join(' ')}</p>
                 {/*<code>{JSON.stringify(this.props.dbData)}</code>*/}
