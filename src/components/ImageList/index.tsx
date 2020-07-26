@@ -132,6 +132,7 @@ class ImageList extends React.Component<Props, State> {
                     user={this.props.user}
                     sha={openImageSha}
                     entry={openImageEntry}
+                    dbEntry={this.getDBEntry(this.state.dbValue, openImageSha)}
                     onClose={() => this.setState({ openImageSha: undefined })}
                     onDelete={sha => this.shaDeleted(sha)}
                 />

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {ImageFileGroup} from "../../types";
+import {DBEntry, ImageFileGroup} from "../../types";
 import ImageLoader from "./image_loader";
 
 declare const firebase: typeof import('firebase');
@@ -8,53 +8,41 @@ type Props = {
     user: firebase.User;
     sha: string;
     entry: ImageFileGroup;
+    dbEntry: DBEntry;
     onDelete: (sha: string) => void;
     onClose: () => void;
 };
 
 type State = {
-    dbData: any;
     textValue: string;
     tagsValue: string;
-    tagsArray: string[];
-    rotateDegrees: number;
+    dbEntry: DBEntry;
 };
 
 class EditImage extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props);
-    }
 
-    componentDidMount() {
-        const entry = this.props.entry;
-
-        const ref = firebase.database().ref(`users/${this.props.user.uid}/images/${this.props.sha}`);
-
-        ref.once('value', snapshot => {
-            const dbData = snapshot.val() || {};
-            const textValue = dbData.text || '';
-            const tagsArray = dbData.tags || [];
-            const tagsValue = tagsArray.sort().join(' ');
-            const rotateDegrees = dbData.rotateDegrees || 0;
-            this.setState({ dbData, textValue, tagsValue, tagsArray, rotateDegrees });
-        });
+        this.state = {
+            textValue: this.props.dbEntry.text,
+            tagsValue: this.props.dbEntry.tags.sort().join(" "),
+            dbEntry: this.props.dbEntry,
+        };
     }
 
     resetRotation() {
-        this.setState({ rotateDegrees: 0 });
+        this.setState({
+            dbEntry: {
+                ...this.state.dbEntry,
+                rotateDegrees: 0,
+            },
+        });
     }
 
     onSubmit() {
-        const { textValue, tagsArray, rotateDegrees } = this.state;
-        if (typeof(textValue) !== 'string' || !tagsArray || typeof(rotateDegrees) !== 'number') return;
-
         firebase.database().ref(`users/${this.props.user.uid}/images/${this.props.sha}`)
-            .set({
-                text: textValue,
-                tags: tagsArray,
-                rotateDegrees: rotateDegrees,
-            })
+            .set(this.state.dbEntry)
             .then(() => this.props.onClose())
             .catch(err => console.error("Error saving image data to db:", err));
     }
@@ -76,9 +64,14 @@ class EditImage extends React.Component<Props, State> {
         ].filter(e => e).join("");
 
         const rotate = (by: number) => {
-            let rotateDegrees = this.state.rotateDegrees || 0;
+            let rotateDegrees = this.state.dbEntry.rotateDegrees;
             rotateDegrees = Math.floor(rotateDegrees + 360 + by) % 360;
-            this.setState({ rotateDegrees });
+            this.setState({
+                dbEntry: {
+                    ...this.state.dbEntry,
+                    rotateDegrees,
+                },
+            });
             e.stopPropagation();
         };
 
@@ -138,10 +131,10 @@ class EditImage extends React.Component<Props, State> {
     render() {
         if (!this.state) return null;
 
-        const { rotateDegrees, dbData } = this.state;
-        if (!dbData) return null;
+        const { dbEntry } = this.state;
+        if (!dbEntry) return null;
 
-        const transform = `rotate(${1 * (rotateDegrees || 0)}deg)`;
+        const transform = `rotate(${1 * (dbEntry.rotateDegrees)}deg)`;
 
         return (
             <div>
@@ -180,11 +173,17 @@ class EditImage extends React.Component<Props, State> {
                                 )
                                     .filter(t => t.length > 0)
                                     .sort();
-                                this.setState({ tagsValue, tagsArray });
+                                this.setState({
+                                    tagsValue,
+                                    dbEntry: {
+                                        ...this.state.dbEntry,
+                                        tags: tagsArray,
+                                    },
+                                });
                             }}
                         />
                         <code style={{marginLeft: '1em'}}>
-                            {JSON.stringify(this.state.tagsArray)}
+                            {JSON.stringify(this.state.dbEntry.tags)}
                         </code>
                     </p>
 
