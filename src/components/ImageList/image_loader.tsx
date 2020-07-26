@@ -3,7 +3,7 @@ import * as React from 'react';
 import {ImageFileGroup} from "../../types";
 import ImageDownloader from "./image_downloader";
 
-type WidthAndHeight = {
+export type WidthAndHeight = {
     width: number;
     height: number;
 };

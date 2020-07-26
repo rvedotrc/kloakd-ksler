@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {DBEntry, ImageFileGroup} from "../../types";
 import ImageLoader from "./image_loader";
+import ImageWithGeometry from "./image_with_geometry";
 
 declare const firebase: typeof import('firebase');
 
@@ -134,8 +135,6 @@ class EditImage extends React.Component<Props, State> {
         const { dbEntry } = this.state;
         if (!dbEntry) return null;
 
-        const transform = `rotate(${1 * (dbEntry.rotateDegrees)}deg)`;
-
         return (
             <div>
                 <form
@@ -188,6 +187,10 @@ class EditImage extends React.Component<Props, State> {
                     </p>
 
                     <p>
+                        Rotate:{' '}{this.state.dbEntry.rotateDegrees}°
+                    </p>
+
+                    <p>
                         <input type="button" value="Rotate" onKeyDown={e => this.onKeyDown(e)}/>
                         <input type="submit" value="Save"/>
                         <input type="reset" value="Cancel"/>
@@ -196,24 +199,28 @@ class EditImage extends React.Component<Props, State> {
 
                 </form>
 
-                <p>{transform}</p>
-
                 <ImageLoader
                     sha={this.props.sha}
                     entry={this.props.entry}
                     preferredThumbnail={"1000x1000"}
-                    render={({ src, widthAndHeight }) => {
+                    render={
+                        ({ src, widthAndHeight }) => {
                         if (!src) return null;
+                        if (!widthAndHeight) return null;
 
                         return (
-                            <div style={{overflow: 'hidden'}}>
-                                <img
-                                    src={src}
-                                    style={{
-                                        transform: transform,
-                                    }}
-                                />
-                            </div>
+                            <ImageWithGeometry
+                                desiredSize={800}
+                                src={src}
+                                widthAndHeight={widthAndHeight}
+                                dbEntry={this.state.dbEntry}
+                                onChangeDBEntry={(dbEntry: DBEntry) => this.setState({
+                                    dbEntry: {
+                                        ...this.state.dbEntry,
+                                        rotateDegrees: dbEntry.rotateDegrees,
+                                    }
+                                })}
+                            />
                         );
                     }}
                 />
