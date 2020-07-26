@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {DBEntry, ImageFileGroup} from "../../types";
+import {ImageFileGroup} from "../../types";
 import ImageDownloader from "./image_downloader";
 
 type WidthAndHeight = {
@@ -16,7 +16,6 @@ type RenderArgs = {
 type Props = {
     sha: string;
     entry: ImageFileGroup;
-    dbEntry: DBEntry;
     preferredThumbnail: string;
     render: (args: RenderArgs) => React.ReactNode;
 };
@@ -37,7 +36,6 @@ class ImageLoader extends React.Component<Props, State> {
                 <ImageDownloader
                     sha={this.props.sha}
                     entry={this.props.entry}
-                    dbEntry={this.props.dbEntry}
                     preferredThumbnail={this.props.preferredThumbnail}
                     onUrl={url => this.setState({ src: url })}
                     onNaturalSize={(width, height) => this.setState({ widthAndHeight: { width, height } })}

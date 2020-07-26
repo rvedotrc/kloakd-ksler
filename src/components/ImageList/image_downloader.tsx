@@ -1,12 +1,11 @@
 import * as React from 'react';
-import {DBEntry, ImageFileGroup} from "../../types";
+import {ImageFileGroup} from "../../types";
 
 declare const firebase: typeof import('firebase');
 
 type Props = {
     sha: string;
     entry: ImageFileGroup;
-    dbEntry: DBEntry;
     preferredThumbnail: string;
     onUrl: (imageDownloadUrl: string) => void;
     onNaturalSize: (width: number, height: number) => void;

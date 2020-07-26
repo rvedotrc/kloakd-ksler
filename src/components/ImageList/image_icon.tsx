@@ -19,7 +19,6 @@ class ImageIcon extends React.Component<Props, never> {
             <ImageLoader
                 sha={this.props.sha}
                 entry={this.props.entry}
-                dbEntry={this.props.dbEntry}
                 preferredThumbnail="200x200"
                 render={({src, widthAndHeight}) => {
                     if (!src) return "...";
