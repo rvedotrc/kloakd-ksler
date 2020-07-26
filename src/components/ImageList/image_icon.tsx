@@ -52,13 +52,13 @@ class ImageIcon extends React.Component<Props, never> {
                                 >
                                     <defs>
                                         <clipPath id={clipperId}>
-                                            <circle cx="0" cy="0" r={desiredSize / 2}/>
+                                            <circle cx="0" cy="0" r={desiredSize * this.props.dbEntry.radiusRatio}/>
                                         </clipPath>
                                     </defs>
 
                                     <g transform={`rotate(${degreesRotation})`}>
                                         <g clipPath={`url(#${clipperId})`}>
-                                            <g transform={`scale(${scaleBy}) translate(-${safeNaturalWidth / 2} -${safeNaturalHeight / 2})`}>
+                                            <g transform={`scale(${scaleBy}) translate(-${safeNaturalWidth * this.props.dbEntry.centerXRatio} -${safeNaturalHeight * this.props.dbEntry.centerYRatio})`}>
                                                 <image
                                                     href={imageDownloadUrl}
                                                     width={safeNaturalWidth}

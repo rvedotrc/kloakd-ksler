@@ -19,4 +19,7 @@ export type DBEntry = {
     text: string;
     tags: string[];
     rotateDegrees: number;
+    centerXRatio: number;
+    centerYRatio: number;
+    radiusRatio: number;
 };

@@ -147,6 +147,9 @@ class ImageList extends React.Component<Props, State> {
             text: entry.text || "",
             tags: entry.tags || [],
             rotateDegrees: entry.rotateDegrees || 0,
+            centerXRatio: entry.centerXRatio || 0.5,
+            centerYRatio: entry.centerYRatio || 0.5,
+            radiusRatio: entry.radiusRatio || 0.5,
         };
     }
 

@@ -218,6 +218,9 @@ class EditImage extends React.Component<Props, State> {
                                     dbEntry: {
                                         ...this.state.dbEntry,
                                         rotateDegrees: dbEntry.rotateDegrees,
+                                        centerXRatio: dbEntry.centerXRatio,
+                                        centerYRatio: dbEntry.centerYRatio,
+                                        radiusRatio: dbEntry.radiusRatio,
                                     }
                                 })}
                             />
