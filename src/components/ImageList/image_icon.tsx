@@ -11,7 +11,6 @@ type Props = {
 
 type State = {
     imageDownloadUrl?: string;
-    usingThumbnail?: boolean;
     isMounted: boolean;
     naturalWidth?: number;
     naturalHeight?: number;
@@ -34,13 +33,22 @@ class ImageIcon extends React.Component<Props, State> {
             const fullPath = thumbnailPath || entry.main?.metadata?.fullPath;
             if (!fullPath) throw 'No thumbnail and no main';
 
-            const usingThumbnail = !!thumbnailPath;
-
             const reference = firebase.storage().ref(fullPath);
 
             reference.getDownloadURL()
                 .then(imageDownloadUrl => {
-                    this.state.isMounted && this.setState({ imageDownloadUrl, usingThumbnail });
+                    if (this.state.isMounted) {
+                        this.setState({imageDownloadUrl});
+
+                        const img = document.createElement("img");
+                        img.addEventListener("load", () => {
+                            this.setState({
+                                naturalWidth: img.naturalWidth,
+                                naturalHeight: img.naturalHeight,
+                            });
+                        });
+                        img.setAttribute("src", imageDownloadUrl);
+                    }
                 })
                 .catch(error => console.log({error}));
         } catch(e) {
@@ -55,18 +63,10 @@ class ImageIcon extends React.Component<Props, State> {
     render() {
         if (!this.state) return "...";
 
-        const { imageDownloadUrl, usingThumbnail, naturalWidth, naturalHeight } = this.state;
+        const { imageDownloadUrl, naturalWidth, naturalHeight } = this.state;
         if (!imageDownloadUrl) return "...";
 
         if (!naturalWidth || !naturalHeight) {
-            const img = document.createElement("img");
-            img.addEventListener("load", () => {
-                this.setState({
-                    naturalWidth: img.naturalWidth,
-                    naturalHeight: img.naturalHeight,
-                });
-            });
-            img.setAttribute("src", imageDownloadUrl);
             return "....";
         }
 
@@ -151,12 +151,6 @@ class ImageIcon extends React.Component<Props, State> {
 
         const transform = `rotate(${degreesRotation}deg)`;
         const style: React.CSSProperties = { transform };
-
-        if (!usingThumbnail) {
-            style.width = '200px';
-            style.height = '200px';
-            style.border = '1px solid red';
-        }
 
         return (
             <div className="imageIcon">
