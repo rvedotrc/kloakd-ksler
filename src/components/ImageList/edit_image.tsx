@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {ImageFileGroup} from "../../types";
+import ImageLoader from "./image_loader";
 
 declare const firebase: typeof import('firebase');
 
@@ -12,7 +13,6 @@ type Props = {
 };
 
 type State = {
-    imageDownloadUrl: string;
     dbData: any;
     textValue: string;
     tagsValue: string;
@@ -28,19 +28,6 @@ class EditImage extends React.Component<Props, State> {
 
     componentDidMount() {
         const entry = this.props.entry;
-
-        try {
-            const fullPath = entry.thumbnails.get('1000x1000')?.path || entry.main?.metadata?.fullPath;
-            if (!fullPath) throw 'No thumbnail and no main path';
-
-            const reference = firebase.storage().ref(fullPath);
-
-            reference.getDownloadURL()
-                .then(url => this.setState({imageDownloadUrl: url}))
-                .catch(error => console.log({error}));
-        } catch(e) {
-            console.log({ e });
-        }
 
         const ref = firebase.database().ref(`users/${this.props.user.uid}/images/${this.props.sha}`);
 
@@ -151,8 +138,7 @@ class EditImage extends React.Component<Props, State> {
     render() {
         if (!this.state) return null;
 
-        const { imageDownloadUrl, rotateDegrees, dbData } = this.state;
-        if (!imageDownloadUrl) return null;
+        const { rotateDegrees, dbData } = this.state;
         if (!dbData) return null;
 
         const transform = `rotate(${1 * (rotateDegrees || 0)}deg)`;
@@ -213,14 +199,25 @@ class EditImage extends React.Component<Props, State> {
 
                 <p>{transform}</p>
 
-                <div style={{overflow: 'hidden'}}>
-                    <img
-                        src={imageDownloadUrl}
-                        style={{
-                            transform: transform,
-                        }}
-                    />
-                </div>
+                <ImageLoader
+                    sha={this.props.sha}
+                    entry={this.props.entry}
+                    preferredThumbnail={"1000x1000"}
+                    render={({ src, widthAndHeight }) => {
+                        if (!src) return null;
+
+                        return (
+                            <div style={{overflow: 'hidden'}}>
+                                <img
+                                    src={src}
+                                    style={{
+                                        transform: transform,
+                                    }}
+                                />
+                            </div>
+                        );
+                    }}
+                />
 
                 <hr/>
 
