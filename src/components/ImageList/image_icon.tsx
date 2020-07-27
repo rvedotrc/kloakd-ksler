@@ -73,6 +73,8 @@ class ImageIcon extends React.Component<Props, never> {
                     }
 
                     if ((tags.has('shape:square') || tags.has('shape:circleinsquare')) && !tags.has('multiple')) {
+                        const scaledDesiredSize = desiredSize * this.props.dbEntry.radiusRatio * 2;
+
                         return (
                             <div className="imageIcon">
                                 <p className="imageText">{this.props.dbEntry.text || ''}</p>
@@ -85,14 +87,14 @@ class ImageIcon extends React.Component<Props, never> {
                                 >
                                     <defs>
                                         <clipPath id={clipperId}>
-                                            <rect x={-desiredSize / 2} y={-desiredSize / 2} width={desiredSize}
-                                                  height={desiredSize}/>
+                                            <rect x={-scaledDesiredSize / 2} y={-scaledDesiredSize / 2} width={scaledDesiredSize}
+                                                  height={scaledDesiredSize}/>
                                         </clipPath>
                                     </defs>
 
                                     <g transform={`rotate(${degreesRotation})`}>
                                         <g clipPath={`url(#${clipperId})`}>
-                                            <g transform={`scale(${scaleBy}) translate(-${safeNaturalWidth / 2} -${safeNaturalHeight / 2})`}>
+                                            <g transform={`scale(${scaleBy}) translate(-${safeNaturalWidth * this.props.dbEntry.centerXRatio} -${safeNaturalHeight * this.props.dbEntry.centerYRatio})`}>
                                                 <image
                                                     href={imageDownloadUrl}
                                                     width={safeNaturalWidth}

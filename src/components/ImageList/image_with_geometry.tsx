@@ -2,6 +2,7 @@ import * as React from 'react';
 import {DBEntry} from "../../types";
 import {WidthAndHeight} from "./image_loader";
 import ImageWithGeometryCircle from "./image_with_geometry_circle";
+import ImageWithGeometrySquare from "./image_with_geometry_square";
 
 type Props = {
     src: string;
@@ -38,6 +39,17 @@ class ImageWithGeometry extends React.Component<Props, State> {
             );
         }
 
+        if (shape === 'square' || shape === 'circleinsquare') {
+            return (
+                <ImageWithGeometrySquare
+                    src={this.props.src}
+                    widthAndHeight={this.props.widthAndHeight}
+                    dbEntry={this.props.dbEntry}
+                    onChangeDBEntry={this.props.onChangeDBEntry}
+                    desiredSize={this.props.desiredSize}
+                />
+            );
+        }
 
         const { width: imageWidth, height: imageHeight } = this.props.widthAndHeight;
         const smallerImageDimension = (imageWidth < imageHeight) ? imageWidth : imageHeight;
