@@ -39,41 +39,9 @@ class ImageIcon extends React.Component<Props, never> {
                     const scaleBy = desiredSize / smallerDimension;
                     const clipperId = "clipper-" + this.props.sha;
 
-                    if (tags.has('shape:circle') && !tags.has('multiple')) {
-                        return (
-                            <div className="imageIcon">
-                                <p className="imageText">{this.props.dbEntry.text || ''}</p>
-                                <p className="imageTags">{(this.props.dbEntry.tags || []).join(' ')}</p>
-
-                                <svg className="imageThumbnail shapeCircle"
-                                     width={desiredSize} height={desiredSize}
-                                     viewBox={`-${desiredSize / 2} -${desiredSize / 2} ${desiredSize} ${desiredSize}`}
-                                     xmlnsXlink="http://www.w3.org/1999/xlink"
-                                >
-                                    <defs>
-                                        <clipPath id={clipperId}>
-                                            <circle cx="0" cy="0" r={desiredSize * this.props.dbEntry.radiusRatio}/>
-                                        </clipPath>
-                                    </defs>
-
-                                    <g transform={`rotate(${degreesRotation})`}>
-                                        <g clipPath={`url(#${clipperId})`}>
-                                            <g transform={`scale(${scaleBy}) translate(-${safeNaturalWidth * this.props.dbEntry.centerXRatio} -${safeNaturalHeight * this.props.dbEntry.centerYRatio})`}>
-                                                <image
-                                                    href={imageDownloadUrl}
-                                                    width={safeNaturalWidth}
-                                                    height={safeNaturalHeight}
-                                                />
-                                            </g>
-                                        </g>
-                                    </g>
-                                </svg>
-                            </div>
-                        );
-                    }
-
-                    if ((tags.has('shape:square') || tags.has('shape:circleinsquare')) && !tags.has('multiple')) {
+                    if ((tags.has('shape:circle') || tags.has('shape:square') || tags.has('shape:circleinsquare')) && !tags.has('multiple')) {
                         const scaledDesiredSize = desiredSize * this.props.dbEntry.radiusRatio * 2;
+                        const isCircle = tags.has('shape:circle');
 
                         return (
                             <div className="imageIcon">
@@ -87,8 +55,12 @@ class ImageIcon extends React.Component<Props, never> {
                                 >
                                     <defs>
                                         <clipPath id={clipperId}>
-                                            <rect x={-scaledDesiredSize / 2} y={-scaledDesiredSize / 2} width={scaledDesiredSize}
-                                                  height={scaledDesiredSize}/>
+                                            {isCircle && (
+                                                <circle cx="0" cy="0" r={scaledDesiredSize / 2}/>
+                                            )}
+                                            {!isCircle && (
+                                                <rect x={-scaledDesiredSize / 2} y={-scaledDesiredSize / 2} width={scaledDesiredSize} height={scaledDesiredSize}/>
+                                            )}
                                         </clipPath>
                                     </defs>
 

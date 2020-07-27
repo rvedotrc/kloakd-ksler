@@ -1,8 +1,7 @@
 import * as React from 'react';
 import {DBEntry} from "../../types";
 import {WidthAndHeight} from "./image_loader";
-import ImageWithGeometryCircle from "./image_with_geometry_circle";
-import ImageWithGeometrySquare from "./image_with_geometry_square";
+import ImageWithGeometryCircleSquare from "./image_with_geometry_circle_square";
 
 type Props = {
     src: string;
@@ -27,26 +26,15 @@ class ImageWithGeometry extends React.Component<Props, State> {
     render() {
         const shape = this.getShape();
 
-        if (shape === 'circle') {
+        if (shape === 'circle' || shape === 'square' || shape === 'circleinsquare') {
             return (
-                <ImageWithGeometryCircle
+                <ImageWithGeometryCircleSquare
                     src={this.props.src}
                     widthAndHeight={this.props.widthAndHeight}
                     dbEntry={this.props.dbEntry}
                     onChangeDBEntry={this.props.onChangeDBEntry}
                     desiredSize={this.props.desiredSize}
-                />
-            );
-        }
-
-        if (shape === 'square' || shape === 'circleinsquare') {
-            return (
-                <ImageWithGeometrySquare
-                    src={this.props.src}
-                    widthAndHeight={this.props.widthAndHeight}
-                    dbEntry={this.props.dbEntry}
-                    onChangeDBEntry={this.props.onChangeDBEntry}
-                    desiredSize={this.props.desiredSize}
+                    shape={shape === 'circle' ? 'circle' : 'square'}
                 />
             );
         }

@@ -8,6 +8,7 @@ type Props = {
     dbEntry: DBEntry;
     onChangeDBEntry: (dbEntry: DBEntry) => void;
     desiredSize: number;
+    shape: "circle" | "square";
 };
 
 type State = {
@@ -21,7 +22,7 @@ type State = {
     draggingCenterOffset: { x: number; y: number; };
 };
 
-class ImageWithGeometryCircle extends React.Component<Props, State> {
+class ImageWithGeometryCircleSquare extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props);
@@ -143,17 +144,33 @@ class ImageWithGeometryCircle extends React.Component<Props, State> {
                             height={imageHeight}
                         />
 
-                        <circle
-                            cx={imageWidth * this.state.centerXRatio}
-                            cy={imageHeight * this.state.centerYRatio}
-                            r={smallerImageDimension * this.state.radiusRatio}
+                        <defs>
+                            {this.props.shape === 'circle' && (
+                                <circle id="boxPath"
+                                        cx={imageWidth * this.state.centerXRatio}
+                                        cy={imageHeight * this.state.centerYRatio}
+                                        r={smallerImageDimension * this.state.radiusRatio}
+                                />
+                            )}
+                            {this.props.shape === 'square' && (
+                                <path id="boxPath"
+                                    d={`
+                                        M ${imageWidth * this.state.centerXRatio - smallerImageDimension * this.state.radiusRatio}
+                                          ${imageHeight * this.state.centerYRatio - smallerImageDimension * this.state.radiusRatio}
+                                        h ${smallerImageDimension * this.state.radiusRatio * 2}
+                                        v ${smallerImageDimension * this.state.radiusRatio * 2}
+                                        h -${smallerImageDimension * this.state.radiusRatio * 2}
+                                        z
+                                    `}
+                                />
+                            )}
+                        </defs>
+
+                        <use xlinkHref="#boxPath"
                             fill={"none"}
                             stroke={"red"}
                         />
-                        <circle
-                            cx={imageWidth * this.props.dbEntry.centerXRatio}
-                            cy={imageHeight * this.props.dbEntry.centerYRatio}
-                            r={smallerImageDimension * this.props.dbEntry.radiusRatio}
+                        <use xlinkHref="#boxPath"
                             fill={"none"}
                             stroke={"transparent"}
                             strokeWidth={100}
@@ -217,4 +234,4 @@ class ImageWithGeometryCircle extends React.Component<Props, State> {
 
 }
 
-export default ImageWithGeometryCircle;
+export default ImageWithGeometryCircleSquare;
