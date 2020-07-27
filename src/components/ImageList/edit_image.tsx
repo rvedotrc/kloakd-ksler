@@ -18,6 +18,7 @@ type State = {
     textValue: string;
     tagsValue: string;
     dbEntry: DBEntry;
+    imageKey: number;
 };
 
 class EditImage extends React.Component<Props, State> {
@@ -29,6 +30,7 @@ class EditImage extends React.Component<Props, State> {
             textValue: this.props.dbEntry.text,
             tagsValue: this.props.dbEntry.tags.sort().join(" "),
             dbEntry: this.props.dbEntry,
+            imageKey: new Date().getTime(),
         };
     }
 
@@ -210,6 +212,7 @@ class EditImage extends React.Component<Props, State> {
 
                         return (
                             <ImageWithGeometry
+                                key={this.state.imageKey}
                                 desiredSize={800}
                                 src={src}
                                 widthAndHeight={widthAndHeight}
@@ -221,7 +224,8 @@ class EditImage extends React.Component<Props, State> {
                                         centerXRatio: dbEntry.centerXRatio,
                                         centerYRatio: dbEntry.centerYRatio,
                                         radiusRatio: dbEntry.radiusRatio,
-                                    }
+                                    },
+                                    imageKey: new Date().getTime(),
                                 })}
                             />
                         );
