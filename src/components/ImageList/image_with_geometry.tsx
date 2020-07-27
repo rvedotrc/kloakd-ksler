@@ -10,12 +10,115 @@ type Props = {
     desiredSize: number;
 };
 
-type State = {};
+type State = {
+    radiusRatio: number;
+    isDraggingRadius: boolean;
+    draggingRadiusR: number;
+
+    centerXRatio: number;
+    centerYRatio: number;
+    isDraggingCenter: boolean;
+    draggingCenterOffset: { x: number; y: number; };
+};
 
 class ImageWithGeometry extends React.Component<Props, State> {
 
+    constructor(props: Props) {
+        super(props);
+        this.state = {
+            radiusRatio: props.dbEntry.radiusRatio,
+            isDraggingRadius: false,
+            draggingRadiusR: 1,
+
+            centerXRatio: props.dbEntry.centerXRatio,
+            centerYRatio: props.dbEntry.centerYRatio,
+            isDraggingCenter: false,
+            draggingCenterOffset: { x: 0, y: 0 },
+        };
+    }
+
     private getShape(): string | undefined {
         return this.props.dbEntry.tags.find(tag => tag.startsWith("shape:"))?.replace("shape:", "");
+    }
+
+    private getSVGXY(event: React.MouseEvent): { x: number; y: number; } | undefined {
+        const svg = (event.target as SVGCircleElement);
+        if (!svg) return;
+        if (!svg.ownerSVGElement) return;
+
+        let screenCTM = svg.getScreenCTM();
+        if (!screenCTM) return;
+
+        const pt = svg.ownerSVGElement.createSVGPoint();
+        pt.x = event.clientX;
+        pt.y = event.clientY;
+
+        // The cursor point, translated into svg coordinates
+        const cursorPt =  pt.matrixTransform(screenCTM.inverse());
+
+        return {
+            x: cursorPt.x,
+            y: cursorPt.y,
+        };
+    }
+
+    updateDrag(event: React.MouseEvent) {
+        if (this.state.isDraggingRadius) {
+            const cursorPt = this.getSVGXY(event);
+            if (!cursorPt) return;
+
+            const {width: imageWidth, height: imageHeight} = this.props.widthAndHeight;
+            const smallerImageDimension = (imageWidth < imageHeight) ? imageWidth : imageHeight;
+
+            const distanceFromCenter = Math.sqrt(
+                (cursorPt.x - imageWidth * this.props.dbEntry.centerXRatio) ** 2
+                +
+                (cursorPt.y - imageHeight * this.props.dbEntry.centerYRatio) ** 2
+            );
+
+            const radiusRatio = distanceFromCenter / smallerImageDimension;
+
+            this.setState({
+                radiusRatio: radiusRatio / this.state.draggingRadiusR,
+            });
+        } else if (this.state.isDraggingCenter) {
+            const cursorPt = this.getSVGXY(event);
+            if (!cursorPt) return;
+
+            const {width: imageWidth, height: imageHeight} = this.props.widthAndHeight;
+
+            const newXRatio = cursorPt.x / imageWidth;
+            const newYRatio = cursorPt.y / imageHeight;
+
+            this.setState({
+                centerXRatio: newXRatio - this.state.draggingCenterOffset.x,
+                centerYRatio: newYRatio - this.state.draggingCenterOffset.y,
+            });
+        }
+    }
+
+    cancelDrag() {
+        this.setState({
+            isDraggingRadius: false,
+            radiusRatio: this.props.dbEntry.radiusRatio,
+
+            isDraggingCenter: false,
+            centerXRatio: this.props.dbEntry.centerXRatio,
+            centerYRatio: this.props.dbEntry.centerYRatio,
+        });
+    }
+
+    endDrag() {
+        if (this.state.isDraggingRadius || this.state.isDraggingCenter) {
+            this.props.onChangeDBEntry({
+                ...this.props.dbEntry,
+                radiusRatio: this.state.radiusRatio,
+                centerXRatio: this.state.centerXRatio,
+                centerYRatio: this.state.centerYRatio,
+            });
+        }
+
+        this.cancelDrag();
     }
 
     render() {
@@ -35,6 +138,9 @@ class ImageWithGeometry extends React.Component<Props, State> {
                      width={viewBoxSize} height={viewBoxSize}
                      viewBox={`-${viewBoxSize / 2} -${viewBoxSize / 2} ${viewBoxSize} ${viewBoxSize}`}
                      xmlnsXlink="http://www.w3.org/1999/xlink"
+                     onMouseLeave={() => this.cancelDrag()}
+                     onMouseUp={() => this.endDrag()}
+                     onMouseMove={event => this.updateDrag(event)}
                 >
                     <g transform={`rotate(${this.props.dbEntry.rotateDegrees})`}>
                         <g transform={`scale(${scaleBy}) translate(-${imageWidth * this.props.dbEntry.centerXRatio} -${imageHeight * this.props.dbEntry.centerYRatio})`}>
@@ -45,9 +151,9 @@ class ImageWithGeometry extends React.Component<Props, State> {
                             />
 
                             <circle
-                                cx={imageWidth * this.props.dbEntry.centerXRatio}
-                                cy={imageHeight * this.props.dbEntry.centerYRatio}
-                                r={smallerImageDimension * this.props.dbEntry.radiusRatio}
+                                cx={imageWidth * this.state.centerXRatio}
+                                cy={imageHeight * this.state.centerYRatio}
+                                r={smallerImageDimension * this.state.radiusRatio}
                                 fill={"none"}
                                 stroke={"red"}
                             />
@@ -60,19 +166,12 @@ class ImageWithGeometry extends React.Component<Props, State> {
                                 strokeWidth={100}
                                 style={{cursor: "pointer"}}
                                 onMouseDown={event => {
-                                    const svg = (event.target as SVGCircleElement);
-                                    if (!svg) return;
-                                    if (!svg.ownerSVGElement) return;
+                                    this.setState({
+                                        isDraggingRadius: true,
+                                    });
 
-                                    let screenCTM = svg.getScreenCTM();
-                                    if (!screenCTM) return;
-
-                                    const pt = svg.ownerSVGElement.createSVGPoint();
-                                    pt.x = event.clientX;
-                                    pt.y = event.clientY;
-
-                                    // The cursor point, translated into svg coordinates
-                                    const cursorPt =  pt.matrixTransform(screenCTM.inverse());
+                                    const cursorPt = this.getSVGXY(event);
+                                    if (!cursorPt) return;
 
                                     const distanceFromCenter = Math.sqrt(
                                         (cursorPt.x - imageWidth * this.props.dbEntry.centerXRatio) ** 2
@@ -82,44 +181,36 @@ class ImageWithGeometry extends React.Component<Props, State> {
 
                                     const radiusRatio = distanceFromCenter / smallerImageDimension;
 
-                                    this.props.onChangeDBEntry({
-                                        ...this.props.dbEntry,
-                                        radiusRatio,
+                                    this.setState({
+                                        draggingRadiusR: radiusRatio / this.props.dbEntry.radiusRatio,
                                     });
                                 }}
                             />
 
                             <path d={`
-                                M ${imageWidth * this.props.dbEntry.centerXRatio} ${imageHeight * this.props.dbEntry.centerYRatio}
+                                M ${imageWidth * this.state.centerXRatio} ${imageHeight * this.state.centerYRatio}
                                 m -100 0 l 200 0
                                 m -100 -100 l 0 200
                             `} stroke={"red"}/>
                             <circle
-                                cx={imageWidth * this.props.dbEntry.centerXRatio}
-                                cy={imageHeight * this.props.dbEntry.centerYRatio}
+                                cx={imageWidth * this.state.centerXRatio}
+                                cy={imageHeight * this.state.centerYRatio}
                                 r={50}
                                 fill={"transparent"}
                                 stroke={"red"}
                                 onMouseDown={event => {
-                                    const svg = (event.target as SVGCircleElement);
-                                    if (!svg) return;
-                                    if (!svg.ownerSVGElement) return;
+                                    const cursorPt = this.getSVGXY(event);
+                                    if (!cursorPt) return;
 
-                                    let screenCTM = svg.getScreenCTM();
-                                    if (!screenCTM) return;
+                                    const newXRatio = cursorPt.x / imageWidth;
+                                    const newYRatio = cursorPt.y / imageHeight;
 
-                                    const pt = svg.ownerSVGElement.createSVGPoint();
-                                    pt.x = event.clientX;
-                                    pt.y = event.clientY;
-
-                                    // The cursor point, translated into svg coordinates
-                                    const cursorPt =  pt.matrixTransform(screenCTM.inverse());
-                                    // console.log("(" + cursorPt.x + ", " + cursorPt.y + ")");
-
-                                    this.props.onChangeDBEntry({
-                                        ...this.props.dbEntry,
-                                        centerXRatio: cursorPt.x / imageWidth,
-                                        centerYRatio: cursorPt.y / imageHeight,
+                                    this.setState({
+                                        isDraggingCenter: true,
+                                        draggingCenterOffset: {
+                                            x: newXRatio - this.props.dbEntry.centerXRatio,
+                                            y: newYRatio - this.props.dbEntry.centerYRatio,
+                                        },
                                     });
                                 }}
                                 style={{cursor: "pointer"}}
