@@ -14,6 +14,10 @@ class ImageIcon extends React.Component<Props, never> {
         super(props);
     }
 
+    private getShape(): string | undefined {
+        return this.props.dbEntry.tags.find(tag => tag.startsWith("shape:"))?.replace("shape:", "");
+    }
+
     render() {
         return (
             <ImageLoader
@@ -39,56 +43,49 @@ class ImageIcon extends React.Component<Props, never> {
                     const scaleBy = desiredSize / smallerDimension;
                     const clipperId = "clipper-" + this.props.sha;
 
-                    if ((tags.has('shape:circle') || tags.has('shape:square') || tags.has('shape:circleinsquare')) && !tags.has('multiple')) {
-                        const scaledDesiredSize = desiredSize * this.props.dbEntry.radiusRatio * 2;
-                        const isCircle = tags.has('shape:circle');
+                    const scaledDesiredSize = desiredSize * this.props.dbEntry.radiusRatio * 2;
 
-                        return (
-                            <div className="imageIcon">
-                                <p className="imageText">{this.props.dbEntry.text || ''}</p>
-                                <p className="imageTags">{(this.props.dbEntry.tags || []).join(' ')}</p>
-
-                                <svg className="imageThumbnail shapeSquare"
-                                     width={desiredSize} height={desiredSize}
-                                     viewBox={`-${desiredSize / 2} -${desiredSize / 2} ${desiredSize} ${desiredSize}`}
-                                     xmlnsXlink="http://www.w3.org/1999/xlink"
-                                >
-                                    <defs>
-                                        <clipPath id={clipperId}>
-                                            {isCircle && (
-                                                <circle cx="0" cy="0" r={scaledDesiredSize / 2}/>
-                                            )}
-                                            {!isCircle && (
-                                                <rect x={-scaledDesiredSize / 2} y={-scaledDesiredSize / 2} width={scaledDesiredSize} height={scaledDesiredSize}/>
-                                            )}
-                                        </clipPath>
-                                    </defs>
-
-                                    <g transform={`rotate(${degreesRotation})`}>
-                                        <g clipPath={`url(#${clipperId})`}>
-                                            <g transform={`scale(${scaleBy}) translate(-${safeNaturalWidth * this.props.dbEntry.centerXRatio} -${safeNaturalHeight * this.props.dbEntry.centerYRatio})`}>
-                                                <image
-                                                    href={imageDownloadUrl}
-                                                    width={safeNaturalWidth}
-                                                    height={safeNaturalHeight}
-                                                />
-                                            </g>
-                                        </g>
-                                    </g>
-                                </svg>
-                            </div>
-                        );
-                    }
-
-                    const transform = `rotate(${degreesRotation}deg)`;
-                    const style: React.CSSProperties = {transform};
+                    const shape = this.getShape();
+                    const isCircle = (shape === 'circle');
+                    const isSquare = (shape === 'square' || shape === 'circleinsquare');
+                    const hasBox = !tags.has("multiple");
 
                     return (
                         <div className="imageIcon">
                             <p className="imageText">{this.props.dbEntry.text || ''}</p>
                             <p className="imageTags">{(this.props.dbEntry.tags || []).join(' ')}</p>
-                            {/*<code>{JSON.stringify(this.props.dbData)}</code>*/}
-                            <img className="imageThumbnail shapeOther" style={style} src={imageDownloadUrl}/>
+
+                            <svg className="imageThumbnail shapeSquare"
+                                 width={desiredSize} height={desiredSize}
+                                 viewBox={`-${desiredSize / 2} -${desiredSize / 2} ${desiredSize} ${desiredSize}`}
+                                 xmlnsXlink="http://www.w3.org/1999/xlink"
+                            >
+                                <defs>
+                                    <clipPath id={clipperId}>
+                                        {isCircle && (
+                                            <circle cx="0" cy="0" r={scaledDesiredSize / 2}/>
+                                        )}
+                                        {isSquare && (
+                                            <rect x={-scaledDesiredSize / 2} y={-scaledDesiredSize / 2} width={scaledDesiredSize} height={scaledDesiredSize}/>
+                                        )}
+                                        {!isCircle && !isSquare && (
+                                            <rect x={-desiredSize / 2} y={-desiredSize / 2} width={desiredSize} height={desiredSize}/>
+                                        )}
+                                    </clipPath>
+                                </defs>
+
+                                <g transform={`rotate(${degreesRotation})`}>
+                                    <g clipPath={hasBox ? `url(#${clipperId})` : undefined}>
+                                        <g transform={`scale(${scaleBy}) translate(-${safeNaturalWidth * this.props.dbEntry.centerXRatio} -${safeNaturalHeight * this.props.dbEntry.centerYRatio})`}>
+                                            <image
+                                                href={imageDownloadUrl}
+                                                width={safeNaturalWidth}
+                                                height={safeNaturalHeight}
+                                            />
+                                        </g>
+                                    </g>
+                                </g>
+                            </svg>
                         </div>
                     );
                 }}
