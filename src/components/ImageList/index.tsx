@@ -12,9 +12,11 @@ type Props = {
     user: firebase.User;
 };
 
+type DisplayStyle = "grid" | "list";
+
 type State = {
     ref?: firebase.database.Reference;
-    showGrid: boolean;
+    displayStyle: DisplayStyle;
     openImageSha?: string;
     dbValue?: any;
     bySha?: ImageFileGroupMap;
@@ -28,7 +30,7 @@ class ImageList extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
         this.state = {
-            showGrid: true,
+            displayStyle: "grid",
         };
     }
 
@@ -153,10 +155,10 @@ class ImageList extends React.Component<Props, State> {
         };
     }
 
-    renderFiles(bySha: ImageFileGroupMap, shaFilter: Map<string, boolean> | undefined, dbValue: any, showGrid: boolean) {
+    renderFiles(bySha: ImageFileGroupMap, shaFilter: Map<string, boolean> | undefined, dbValue: any, displayStyle: DisplayStyle) {
         const list = this.getSortedList(bySha, shaFilter);
 
-        if (showGrid) {
+        if (displayStyle === 'grid') {
             return (
                 <div>
                     <ol className="imageGrid">
@@ -178,7 +180,7 @@ class ImageList extends React.Component<Props, State> {
                     </ol>
                 </div>
             );
-        } else {
+        } else if (displayStyle === 'list') {
             return (
                 <div>
                     <h2>List</h2>
@@ -239,7 +241,12 @@ class ImageList extends React.Component<Props, State> {
     render() {
         if (!this.state) return null;
 
-        const { bySha, shaFilter, showGrid, dbValue, openImageSha } = this.state;
+        const { bySha, shaFilter, displayStyle, dbValue, openImageSha } = this.state;
+
+        const displayStyles: { value: DisplayStyle; label: string; }[] = [
+            { value: "grid", label: "Grid" },
+            { value: "list", label: "List" },
+        ];
 
         return (
             <div>
@@ -248,8 +255,24 @@ class ImageList extends React.Component<Props, State> {
                 {openImageSha && bySha && this.renderEditModal(openImageSha, bySha)}
 
                 <p>
-                    <input type={"checkbox"} checked={showGrid} onChange={() => this.setState({ showGrid: !showGrid })}/>
-                    Grid view
+                    {displayStyles.map(({ value, label }) => (
+                        <>
+                            <input
+                                key={"input-" + value}
+                                type={"radio"}
+                                name={"displayStyle"}
+                                id={"displayStyle-" + value}
+                                value={value}
+                                checked={displayStyle === value}
+                                onClick={() => this.setState({ displayStyle: value })}
+                            />
+                            <label
+                                key={"label-" + value}
+                                htmlFor={"displayStyle-" + value}>
+                                {label}
+                            </label>
+                        </>
+                    ))}
                 </p>
 
                 <p>
@@ -262,7 +285,7 @@ class ImageList extends React.Component<Props, State> {
                     />
                 </p>
 
-                {bySha && dbValue && this.renderFiles(bySha, shaFilter, dbValue, showGrid)}
+                {bySha && dbValue && this.renderFiles(bySha, shaFilter, dbValue, displayStyle)}
             </div>
         )
     }
