@@ -40,6 +40,7 @@ class EditImage extends React.Component<Props, State> {
                 ...this.state.dbEntry,
                 rotateDegrees: 0,
             },
+            imageKey: new Date().getTime(),
         });
     }
 
@@ -74,6 +75,7 @@ class EditImage extends React.Component<Props, State> {
                     ...this.state.dbEntry,
                     rotateDegrees,
                 },
+                imageKey: new Date().getTime(),
             });
             e.stopPropagation();
         };

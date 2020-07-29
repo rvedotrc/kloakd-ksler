@@ -19,6 +19,10 @@ type State = {
     centerYRatio: number;
     isDraggingCenter: boolean;
     draggingCenterOffset: { x: number; y: number; };
+
+    rotateDegrees: number;
+    isRotating: boolean;
+    rotationOffset: number;
 };
 
 class ImageWithGeometry extends React.Component<Props, State> {
@@ -34,6 +38,10 @@ class ImageWithGeometry extends React.Component<Props, State> {
             centerYRatio: props.dbEntry.centerYRatio,
             isDraggingCenter: false,
             draggingCenterOffset: { x: 0, y: 0 },
+
+            rotateDegrees: props.dbEntry.rotateDegrees,
+            isRotating: false,
+            rotationOffset: 0,
         };
     }
 
@@ -42,11 +50,12 @@ class ImageWithGeometry extends React.Component<Props, State> {
     }
 
     private getSVGXY(event: React.MouseEvent): { x: number; y: number; } | undefined {
-        const svg = (event.target as SVGCircleElement);
+        const svg = (event.target as SVGGraphicsElement);
         if (!svg) return;
         if (!svg.ownerSVGElement) return;
 
-        let screenCTM = svg.getScreenCTM();
+        const referenceElement = document.getElementById("svgImage") as any as SVGSVGElement;
+        const screenCTM = referenceElement.getScreenCTM();
         if (!screenCTM) return;
 
         const pt = svg.ownerSVGElement.createSVGPoint();
@@ -54,7 +63,7 @@ class ImageWithGeometry extends React.Component<Props, State> {
         pt.y = event.clientY;
 
         // The cursor point, translated into svg coordinates
-        const cursorPt =  pt.matrixTransform(screenCTM.inverse());
+        const cursorPt = pt.matrixTransform(screenCTM.inverse());
 
         return {
             x: cursorPt.x,
@@ -94,6 +103,22 @@ class ImageWithGeometry extends React.Component<Props, State> {
                 centerXRatio: newXRatio - this.state.draggingCenterOffset.x,
                 centerYRatio: newYRatio - this.state.draggingCenterOffset.y,
             });
+        } else if (this.state.isRotating) {
+            const cursorPt = this.getSVGXY(event);
+            if (!cursorPt) return;
+
+            const { width: imageWidth, height: imageHeight } = this.props.widthAndHeight;
+
+            const angleOfCursor = Math.atan2(
+                cursorPt.y - imageHeight * this.state.centerYRatio,
+                cursorPt.x - imageWidth * this.state.centerXRatio,
+            ) * 180 / Math.PI;
+
+            const adjustment = angleOfCursor - this.state.rotationOffset;
+
+            this.setState({
+                rotateDegrees: (360 + this.state.rotateDegrees + adjustment) % 360,
+            });
         }
     }
 
@@ -105,20 +130,48 @@ class ImageWithGeometry extends React.Component<Props, State> {
             isDraggingCenter: false,
             centerXRatio: this.props.dbEntry.centerXRatio,
             centerYRatio: this.props.dbEntry.centerYRatio,
+
+            isRotating: false,
+            rotateDegrees: this.props.dbEntry.rotateDegrees,
         });
     }
 
     endDrag() {
-        if (this.state.isDraggingRadius || this.state.isDraggingCenter) {
+        if (this.state.isDraggingRadius || this.state.isDraggingCenter || this.state.isRotating) {
             this.props.onChangeDBEntry({
                 ...this.props.dbEntry,
                 radiusRatio: this.state.radiusRatio,
                 centerXRatio: this.state.centerXRatio,
                 centerYRatio: this.state.centerYRatio,
+                rotateDegrees: this.state.rotateDegrees,
             });
         }
 
         this.cancelDrag();
+    }
+
+    renderGrid(viewBoxSize: number): React.ReactNode {
+        const n = 40;
+        let d = "";
+
+        for (let i=-0.5; i<=1; i+=1.0/n) {
+            d = d + ` M ${viewBoxSize * i} ${viewBoxSize * -0.5} v ${viewBoxSize}`;
+            d = d + ` M ${viewBoxSize * -0.5} ${viewBoxSize * i} h ${viewBoxSize}`;
+        }
+
+        return <path d={d} stroke={"white"} opacity={0.5}/>;
+    }
+
+    renderConcentricCircles(cx: number, cy: number, r: number): React.ReactNode {
+        const n = 10;
+        let children: React.ReactNodeArray = [];
+
+        for (let i=1; i<=n; ++i) {
+            const thisR = r * i / n;
+            children.push(<circle cx={cx} cy={cy} r={thisR}/>);
+        }
+
+        return <g fill={"none"} stroke={"white"} opacity={0.5}>{children}</g>;
     }
 
     render() {
@@ -144,9 +197,10 @@ class ImageWithGeometry extends React.Component<Props, State> {
                  onMouseUp={() => this.endDrag()}
                  onMouseMove={event => this.updateDrag(event)}
             >
-                <g transform={`rotate(${this.props.dbEntry.rotateDegrees})`}>
+                <g transform={`rotate(${this.state.rotateDegrees})`}>
                     <g transform={`scale(${scaleBy}) translate(-${imageWidth * this.props.dbEntry.centerXRatio} -${imageHeight * this.props.dbEntry.centerYRatio})`}>
                         <image
+                            id={"svgImage"}
                             href={this.props.src}
                             width={imageWidth}
                             height={imageHeight}
@@ -176,15 +230,18 @@ class ImageWithGeometry extends React.Component<Props, State> {
 
                         {hasBox && (
                             <>
+                                {/* Visible rendering of the box */}
                                 <use xlinkHref="#boxPath"
                                     fill={"none"}
                                     stroke={"red"}
                                 />
+
+                                {/* Invisible grabbable area of the box */}
                                 <use xlinkHref="#boxPath"
                                     fill={"none"}
                                     stroke={"transparent"}
                                     strokeWidth={100}
-                                    style={{cursor: "pointer"}}
+                                    style={{cursor: "nwse-resize"}}
                                     onMouseDown={event => {
                                         this.setState({
                                             isDraggingRadius: true,
@@ -209,14 +266,29 @@ class ImageWithGeometry extends React.Component<Props, State> {
                             </>
                         )}
 
+                        {this.state.isDraggingCenter && this.renderConcentricCircles(
+                            imageWidth * this.state.centerXRatio,
+                            imageHeight * this.state.centerYRatio,
+                            smallerImageDimension / 2,
+                        )}
+
+                    </g>
+                </g>
+
+                {/* The centre circle / crosshairs / rotation handles */}
+                {!this.state.isRotating && !this.state.isDraggingCenter && !this.state.isDraggingRadius && (
+                    <>
+                        {/* Centre crosshairs */}
                         <path d={`
-                            M ${imageWidth * this.state.centerXRatio} ${imageHeight * this.state.centerYRatio}
-                            m -100 0 l 200 0
-                            m -100 -100 l 0 200
-                        `} stroke={"red"}/>
+                                    M 0 0
+                                    m -100 0 l 200 0
+                                    m -100 -100 l 0 200
+                                `} stroke={"red"}/>
+
+                        {/* The centre "move" circle */}
                         <circle
-                            cx={imageWidth * this.state.centerXRatio}
-                            cy={imageHeight * this.state.centerYRatio}
+                            cx="0"
+                            cy="0"
                             r={50}
                             fill={"transparent"}
                             stroke={"red"}
@@ -235,11 +307,39 @@ class ImageWithGeometry extends React.Component<Props, State> {
                                     },
                                 });
                             }}
-                            style={{cursor: "pointer"}}
+                            style={{cursor: "move"}}
                         />
 
-                    </g>
-                </g>
+                        {/* Rotation handles on the ends of the crosshairs */}
+                        <g
+                            onMouseDown={event => {
+                                this.setState({
+                                    isRotating: true,
+                                });
+
+                                const cursorPt = this.getSVGXY(event);
+                                if (!cursorPt) return;
+
+                                const angleOfCursor = Math.atan2(
+                                    cursorPt.y - imageHeight * this.state.centerYRatio,
+                                    cursorPt.x - imageWidth * this.state.centerXRatio,
+                                ) * 180 / Math.PI;
+
+                                this.setState({
+                                    rotationOffset: angleOfCursor,
+                                });
+                            }}
+                            style={{cursor: "ew-resize"}}
+                        >
+                            <circle cx="-100" cy="0" r="10" fill="transparent" stroke="red"/>
+                            <circle cx="+100" cy="0" r="10" fill="transparent" stroke="red"/>
+                            <circle cx="0" cy="-100" r="10" fill="transparent" stroke="red"/>
+                            <circle cx="0" cy="+100" r="10" fill="transparent" stroke="red"/>
+                        </g>
+                    </>
+                )}
+
+                {this.state.isRotating && this.renderGrid(viewBoxSize)}
             </svg>
         );
     }
