@@ -142,7 +142,7 @@ class EditImage extends React.Component<Props, State> {
         return (
             <div>
                 <form
-                    onSubmit={(e) => { e.preventDefault();this.onSubmit(); }}
+                    onSubmit={(e) => { e.preventDefault(); this.onSubmit(); }}
                     onReset={this.props.onClose}
                     onKeyDown={e => this.onFormKeyDown(e)}
                     >
@@ -154,7 +154,13 @@ class EditImage extends React.Component<Props, State> {
                             type="text"
                             size={50}
                             value={this.state.textValue}
-                            onChange={e => this.setState({ textValue: e.target.value })}
+                            onChange={e => this.setState({
+                                textValue: e.target.value,
+                                dbEntry: {
+                                    ...this.state.dbEntry,
+                                    text: e.target.value.trim(),
+                                },
+                            })}
                             autoFocus={true}
                         />
                         <span style={{marginLeft: '1em'}}>
