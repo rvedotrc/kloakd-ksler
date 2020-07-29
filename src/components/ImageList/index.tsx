@@ -12,7 +12,7 @@ type Props = {
     user: firebase.User;
 };
 
-type DisplayStyle = "grid" | "list";
+type DisplayStyle = "grid" | "list" | "thumbnails";
 
 type State = {
     ref?: firebase.database.Reference;
@@ -170,10 +170,46 @@ class ImageList extends React.Component<Props, State> {
                             return (
                                 <li
                                     key={sha}
+                                    onClick={() => this.setState({openImageSha: sha})}
+                                    className={matches ? '' : 'hidden'}
+                                >
+                                    <ImageIcon
+                                        sha={sha}
+                                        entry={entry}
+                                        dbEntry={this.getDBEntry(dbValue, sha)}
+                                        preferredThumbnail={"200x200"}
+                                        desiredSize={100}
+                                        withText={true}
+                                    />
+                                </li>
+                            );
+                        })}
+                    </ol>
+                </div>
+            );
+        } else if (displayStyle === 'thumbnails') {
+            return (
+                <div>
+                    <ol className="imageGrid">
+                        {list.map(entryAndMatches => {
+                            const entry = entryAndMatches.imageFileGroup;
+                            const matches = entryAndMatches.matches;
+                            const sha = entry.sha;
+
+                            return (
+                                <li
+                                    key={sha}
                                     onClick={() => this.setState({ openImageSha: sha })}
                                     className={matches ? '' : 'hidden'}
                                 >
-                                    <ImageIcon sha={sha} entry={entry} dbEntry={this.getDBEntry(dbValue, sha)}/>
+                                    <ImageIcon
+                                        sha={sha}
+                                        entry={entry}
+                                        dbEntry={this.getDBEntry(dbValue, sha)}
+                                        preferredThumbnail={"500x500"}
+                                        desiredSize={200}
+                                        withText={false}
+                                    />
                                 </li>
                             );
                         })}
@@ -246,6 +282,7 @@ class ImageList extends React.Component<Props, State> {
         const displayStyles: { value: DisplayStyle; label: string; }[] = [
             { value: "grid", label: "Grid" },
             { value: "list", label: "List" },
+            { value: "thumbnails", label: "Thumbnails" },
         ];
 
         return (

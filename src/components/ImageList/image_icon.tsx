@@ -6,6 +6,9 @@ type Props = {
     sha: string;
     entry: ImageFileGroup;
     dbEntry: DBEntry;
+    withText: boolean;
+    preferredThumbnail: string;
+    desiredSize: number;
 };
 
 class ImageIcon extends React.Component<Props, never> {
@@ -23,7 +26,7 @@ class ImageIcon extends React.Component<Props, never> {
             <ImageLoader
                 sha={this.props.sha}
                 entry={this.props.entry}
-                preferredThumbnail="200x200"
+                preferredThumbnail={this.props.preferredThumbnail}
                 render={({src, widthAndHeight}) => {
                     if (!src) return "...";
                     if (!widthAndHeight) return "....";
@@ -39,7 +42,7 @@ class ImageIcon extends React.Component<Props, never> {
 
                     const tags: Set<string> = new Set(this.props.dbEntry.tags);
 
-                    const desiredSize = 100;
+                    const desiredSize = this.props.desiredSize;
                     const scaleBy = desiredSize / smallerDimension;
                     const clipperId = "clipper-" + this.props.sha;
 
@@ -52,8 +55,12 @@ class ImageIcon extends React.Component<Props, never> {
 
                     return (
                         <div className="imageIcon">
-                            <p className="imageText">{this.props.dbEntry.text || ''}</p>
-                            <p className="imageTags">{(this.props.dbEntry.tags || []).join(' ')}</p>
+                            {this.props.withText && (
+                                <>
+                                    <p className="imageText">{this.props.dbEntry.text || ''}</p>
+                                    <p className="imageTags">{(this.props.dbEntry.tags || []).join(' ')}</p>
+                                </>
+                            )}
 
                             <svg className="imageThumbnail shapeSquare"
                                  width={desiredSize} height={desiredSize}
