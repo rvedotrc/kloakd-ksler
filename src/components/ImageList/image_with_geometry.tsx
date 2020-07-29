@@ -168,7 +168,7 @@ class ImageWithGeometry extends React.Component<Props, State> {
 
         for (let i=1; i<=n; ++i) {
             const thisR = r * i / n;
-            children.push(<circle cx={cx} cy={cy} r={thisR}/>);
+            children.push(<circle key={i} cx={cx} cy={cy} r={thisR}/>);
         }
 
         return <g fill={"none"} stroke={"white"} opacity={0.5}>{children}</g>;
