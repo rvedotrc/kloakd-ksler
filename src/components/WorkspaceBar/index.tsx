@@ -1,11 +1,13 @@
 import * as React from 'react';
 
+export type TabType = "startTab" | "uploadTab" | "exifTab" | "imageListTab";
+
 type Props = {
-    onSwitchTab: (newTab: string) => void;
+    onSwitchTab: (newTab: TabType) => void;
 };
 
 class WorkspaceBar extends React.Component<Props, never> {
-    switchTabTo(newTab: string) {
+    switchTabTo(newTab: TabType) {
         this.props.onSwitchTab(newTab);
     }
 
@@ -15,6 +17,8 @@ class WorkspaceBar extends React.Component<Props, never> {
                 <button onClick={()=>{this.switchTabTo('startTab')}}>Home</button>
                 &nbsp;
                 <button onClick={()=>{this.switchTabTo('uploadTab')}}>Upload</button>
+                &nbsp;
+                <button onClick={()=>{this.switchTabTo('exifTab')}}>EXIF Extraction</button>
                 &nbsp;
                 <button onClick={()=>{this.switchTabTo('imageListTab')}}>Images</button>
                 {/*&nbsp;*/}

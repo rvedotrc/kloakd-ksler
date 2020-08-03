@@ -7496,7 +7496,7 @@ sane@^4.0.3:
     minimist "^1.1.1"
     walker "~1.0.5"
 
-sax@^1.2.4:
+sax@1.2.4, sax@^1.2.4:
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/sax/-/sax-1.2.4.tgz#2816234e2378bddc4e5354fab5caa895df7100d9"
   integrity sha512-NqVDv9TpANUjFm0N8uM5GxL36UgKi9/atZw+x7YFnQ8ckwFGKrl4xX4yWtrey3UJm5nP1kUbnYgLopqWNSRhWw==
@@ -8292,6 +8292,13 @@ tr46@^2.0.2:
   integrity sha512-3n1qG+/5kg+jrbTzwAykB5yRYtQCTqOGKq5U5PE3b0a1/mzo6snDhjGS0zJVJunO0NrT3Dg1MLy5TjWP/UJppg==
   dependencies:
     punycode "^2.1.1"
+
+ts-exif-parser@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/ts-exif-parser/-/ts-exif-parser-0.2.1.tgz#31c462be465f61ad09bd240d001f9204836de198"
+  integrity sha512-Cwhzwn6rM/VtHVr/2Mie2k35lE26rocacRttN6/VlkgBmtkuNSPQT6pPiE6naExDmuXpqJiMqNuJqpKJ7d+vow==
+  dependencies:
+    sax "1.2.4"
 
 ts-loader@^8.0.0:
   version "8.0.2"

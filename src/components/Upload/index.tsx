@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import Dropzone from 'react-dropzone'
 
-import {ImageFile, ImageFileGroup, ImageFileGroupMap} from '../../types';
+import {ImageFileGroupMap} from '../../types';
 import fileReader from "../../file_reader";
 
 declare const firebase: typeof import('firebase');

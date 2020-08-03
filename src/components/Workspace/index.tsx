@@ -1,9 +1,10 @@
 import * as React from 'react';
 
 import Welcome from '../Welcome';
-import WorkspaceBar from '../WorkspaceBar';
+import WorkspaceBar, {TabType} from '../WorkspaceBar';
 import ImageList from "../ImageList";
 import Upload from "../Upload";
+import ExifExtraction from "../ExifExtraction";
 
 declare const firebase: typeof import('firebase');
 
@@ -15,6 +16,7 @@ type State = {
     selectedTab: string;
 };
 
+
 class Workspace extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
@@ -23,7 +25,7 @@ class Workspace extends React.Component<Props, State> {
         };
     }
 
-    switchTabTo(newTab: string) {
+    switchTabTo(newTab: TabType) {
         this.setState({ selectedTab: newTab });
     }
 
@@ -33,7 +35,7 @@ class Workspace extends React.Component<Props, State> {
 
         return (
             <div>
-                <WorkspaceBar onSwitchTab={(to) => {this.switchTabTo(to)}}/>
+                <WorkspaceBar onSwitchTab={(to: TabType) => {this.switchTabTo(to)}}/>
 
                 <div className="container">
                     {(selectedTab === 'startTab') && (
@@ -41,6 +43,9 @@ class Workspace extends React.Component<Props, State> {
                     )}
                     {(selectedTab === 'uploadTab') && (
                         <Upload user={user}/>
+                    )}
+                    {(selectedTab === 'exifTab') && (
+                        <ExifExtraction user={user}/>
                     )}
                     {(selectedTab === 'imageListTab') && (
                         <ImageList user={user}/>
