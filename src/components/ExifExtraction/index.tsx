@@ -75,7 +75,7 @@ class ExifExtraction extends React.Component<Props, State> {
 
         Object.keys(rawDb).map(key => {
             if (key.match(/^(\w{64})$/)) {
-                const rawValue = rawDb[key];
+                // const rawValue = rawDb[key];
                 // TODO: parse rawValue to parsedValue
                 const parsedValue: ExifDBEntry = { tags: [] };
                 answer.set(key, parsedValue);
@@ -98,7 +98,7 @@ class ExifExtraction extends React.Component<Props, State> {
 
         const jobs = this.state.jobs;
 
-        for (let sha of bySha.keys()) {
+        for (const sha of bySha.keys()) {
             if (!dbValue.has(sha)) {
                 jobs.push({
                     sha,
@@ -108,7 +108,7 @@ class ExifExtraction extends React.Component<Props, State> {
             }
         }
 
-        for (let sha of dbValue.keys()) {
+        for (const sha of dbValue.keys()) {
             if (!bySha.has(sha)) {
                 jobs.push({
                     sha,
@@ -131,7 +131,7 @@ class ExifExtraction extends React.Component<Props, State> {
         // console.log(`maybeStartJob nRunning=${nRunning}`);
         if (nRunning >= 5) return;
 
-        const job = jobs.find(job => job.status === "queued");
+        const job = jobs.find(j => j.status === "queued");
         // console.log(`maybeStartJob next job=${job}`);
         if (!job) return;
 
@@ -188,7 +188,7 @@ class ExifExtraction extends React.Component<Props, State> {
                     ((resolve, reject) => {
                         const req = new XMLHttpRequest();
 
-                        req.addEventListener("load", evt => {
+                        req.addEventListener("load", () => {
                             resolve(req.response);
                         });
                         req.addEventListener("error", evt => {

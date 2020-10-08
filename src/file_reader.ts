@@ -3,7 +3,7 @@ import {ImageFile, ImageFileGroup, ImageFileGroupMap} from "./types";
 declare const firebase: typeof import('firebase');
 
 const fileReader = (user: firebase.User, withMainMetadata: boolean): Promise<ImageFileGroupMap> => {
-     var imagesRef = firebase.storage().ref().child(`user/${user.uid}/images`);
+     const imagesRef = firebase.storage().ref().child(`user/${user.uid}/images`);
 
     const bySha = new Map<string, ImageFileGroup>();
 

@@ -4,7 +4,7 @@ import * as ReactModal from 'react-modal';
 import EditImage from "./edit_image";
 import ImageIcon from "./image_icon";
 import fileReader from "../../file_reader";
-import {DBEntry, ImageFileGroup, ImageFileGroupMap} from "../../types";
+import {DBEntry, ImageFileGroupMap} from "../../types";
 
 declare const firebase: typeof import('firebase');
 
@@ -81,7 +81,7 @@ class ImageList extends React.Component<Props, State> {
         const dbValue = this.state.dbValue || {};
         const shaFilter = new Map<string, boolean>();
 
-        for (let sha of bySha.keys()) {
+        for (const sha of bySha.keys()) {
             // const image = bySha[sha];
             const dbData = (dbValue[sha] || {}) as DBEntry;
             // console.log({ sha, image, dbData });

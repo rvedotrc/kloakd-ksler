@@ -86,7 +86,7 @@ class Upload extends React.Component<Props, State> {
         uploadTask.on(
             firebase.storage.TaskEvent.STATE_CHANGED,
             snapshot => {
-                var percent = snapshot.bytesTransferred / snapshot.totalBytes * 100;
+                const percent = snapshot.bytesTransferred / snapshot.totalBytes * 100;
                 // console.log("file", path, `upload progress is ${percent}%`);
                 job.percent = percent;
                 this.shouldReRender();
@@ -138,7 +138,7 @@ class Upload extends React.Component<Props, State> {
         const nActive = this.state.jobs.filter(job => job.state === 'running').length;
         if (nActive >= 5) return;
 
-        const job = this.state.jobs.find(job => job.state === 'queued');
+        const job = this.state.jobs.find(j => j.state === 'queued');
         if (!job) return;
 
         // console.log("Starting upload", job);
