@@ -164,7 +164,7 @@ class ImageWithGeometry extends React.Component<Props, State> {
 
     renderConcentricCircles(cx: number, cy: number, r: number): React.ReactNode {
         const n = 10;
-        let children: React.ReactNodeArray = [];
+        const children: React.ReactNodeArray = [];
 
         for (let i=1; i<=n; ++i) {
             const thisR = r * i / n;

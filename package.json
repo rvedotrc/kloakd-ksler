@@ -52,12 +52,13 @@
     "url": "rvedotrc.github.com:rvedotrc/kloakdaeksler"
   },
   "scripts": {
-    "start": "webpack-dev-server --open --mode development",
+    "start": "firebase serve --port 5100",
     "build": "webpack --mode development",
-    "relint": "rebuild package.json package-lock.json .eslintrc.js src -- npx eslint src",
+    "lint": "npx eslint --ext .jsx,.js,.tsx,.ts --max-warnings 0 src",
+    "relint": "rebuild package.json package-lock.json .eslintrc.js src -- npx run-script lint",
     "rebuild": "rebuild package.json package-lock.json .babelrc webpack.config.js src -- npm run-script build",
     "retest": "rebuild package.json package-lock.json .babelrc webpack.config.js src -- npm run-script test",
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   },
   "author": "Rachel Evans <rachel@rachelevans.org>",
   "license": "ISC",

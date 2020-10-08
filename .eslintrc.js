@@ -1,42 +1,36 @@
 module.exports = {
-    "env": {
-        "browser": true,
-        "es6": true
+    env: {
+        jest: true,
+        browser: true,
     },
-    "extends": [
-        "eslint:recommended",
-        "plugin:react/recommended"
+    root: true,
+    ignorePatterns: [
+        //   "**/jest.config.js",
+        "**/*.test.js*",
+        "**/*.test.ts*",
     ],
-    "globals": {
-        "Atomics": "readonly",
-        "SharedArrayBuffer": "readonly",
-        "firebase": "readonly"
+    parser: '@typescript-eslint/parser',
+    parserOptions: {
+        ecmaVersion: 2020,
+        sourceType: "module",
     },
-    "parserOptions": {
-        "ecmaFeatures": {
-            "jsx": true
-        },
-        "ecmaVersion": 2018,
-        "sourceType": "module"
-    },
-    "overrides": [
-        {
-            "files": [
-                "**/*.spec.js",
-                "**/*.test.js",
-                "**/*.spec.jsx",
-                "**/*.test.jsx"
-            ],
-            "env": {
-                "jest": true
-            }
-        }
+    plugins: [
+        '@typescript-eslint',
+        'jest',
     ],
-    "plugins": [
-        "jest",
-        "react"
+    extends: [
+        'eslint:recommended',
+        'plugin:react/recommended',
+        'plugin:@typescript-eslint/eslint-recommended',
+        'plugin:@typescript-eslint/recommended',
     ],
-    "rules": {
-        "no-unused-vars": ["error", { "varsIgnorePattern": "^(props|React)$" }]
+    rules: {
+        "no-shadow": 1,
+        "@typescript-eslint/ban-ts-ignore": 0,
+        "@typescript-eslint/consistent-type-definitions": ["error", "type"],
+        "@typescript-eslint/explicit-module-boundary-types": "off",
+        "@typescript-eslint/no-inferrable-types": "off",
+        "@typescript-eslint/no-empty-function": "off",
+        "@typescript-eslint/no-explicit-any": "off",
     }
 };

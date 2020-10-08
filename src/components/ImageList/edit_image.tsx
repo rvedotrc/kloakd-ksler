@@ -65,7 +65,7 @@ class EditImage extends React.Component<Props, State> {
             (e.ctrlKey ? 'C' : ''),
             (e.altKey ? 'A' : ''),
             (e.metaKey ? 'M' : ''),
-        ].filter(e => e).join("");
+        ].filter(Boolean).join("");
 
         const rotate = (by: number) => {
             let rotateDegrees = this.state.dbEntry.rotateDegrees;
@@ -119,7 +119,7 @@ class EditImage extends React.Component<Props, State> {
             (e.ctrlKey ? 'C' : ''),
             (e.altKey ? 'A' : ''),
             (e.metaKey ? 'M' : ''),
-        ].filter(e => e).join("");
+        ].filter(Boolean).join("");
 
         switch (e.key + ":" + getModifiers()) {
             case 'Escape:':
@@ -225,13 +225,13 @@ class EditImage extends React.Component<Props, State> {
                                 src={src}
                                 widthAndHeight={widthAndHeight}
                                 dbEntry={this.state.dbEntry}
-                                onChangeDBEntry={(dbEntry: DBEntry) => this.setState({
+                                onChangeDBEntry={(newEntry: DBEntry) => this.setState({
                                     dbEntry: {
                                         ...this.state.dbEntry,
-                                        rotateDegrees: dbEntry.rotateDegrees,
-                                        centerXRatio: dbEntry.centerXRatio,
-                                        centerYRatio: dbEntry.centerYRatio,
-                                        radiusRatio: dbEntry.radiusRatio,
+                                        rotateDegrees: newEntry.rotateDegrees,
+                                        centerXRatio: newEntry.centerXRatio,
+                                        centerYRatio: newEntry.centerYRatio,
+                                        radiusRatio: newEntry.radiusRatio,
                                     },
                                     imageKey: new Date().getTime(),
                                 })}

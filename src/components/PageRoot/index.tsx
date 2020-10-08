@@ -11,8 +11,8 @@ type State = {
     unsubscribe?: firebase.Unsubscribe;
 };
 
-class PageRoot extends React.Component<{}, State> {
-    constructor(props: {}) {
+class PageRoot extends React.Component<any, State> {
+    constructor(props: any) {
         super(props);
         this.state = { loaded: false, user: null };
     }
