@@ -58,7 +58,7 @@
     "relint": "rebuild package.json package-lock.json .eslintrc.js src -- npx run-script lint",
     "rebuild": "rebuild package.json package-lock.json .babelrc webpack.config.js src -- npm run-script build",
     "retest": "rebuild package.json package-lock.json .babelrc webpack.config.js src -- npm run-script test",
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   },
   "author": "Rachel Evans <rachel@rachelevans.org>",
   "license": "ISC",
