@@ -301,7 +301,7 @@ class ImageList extends React.Component<Props, State> {
 
                 <p>
                     {displayStyles.map(({ value, label }) => (
-                        <>
+                        <span key={value}>
                             <input
                                 key={"input-" + value}
                                 type={"radio"}
@@ -316,7 +316,7 @@ class ImageList extends React.Component<Props, State> {
                                 htmlFor={"displayStyle-" + value}>
                                 {label}
                             </label>
-                        </>
+                        </span>
                     ))}
                 </p>
 
