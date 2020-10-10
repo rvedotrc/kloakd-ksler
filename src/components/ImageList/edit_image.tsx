@@ -2,6 +2,7 @@ import * as React from 'react';
 import {DBEntry, ImageFileGroup} from "../../types";
 import ImageLoader from "./image_loader";
 import ImageWithGeometry from "./image_with_geometry";
+import {currentExifDbEntries} from "lib/app_context";
 
 declare const firebase: typeof import('firebase');
 
@@ -244,6 +245,7 @@ class EditImage extends React.Component<Props, State> {
 
                 <pre>{JSON.stringify(this.props.entry, null, 2)}</pre>
                 <pre>{JSON.stringify(Array.from(this.props.entry.thumbnails.keys()).sort())}</pre>
+                <pre>{JSON.stringify(currentExifDbEntries.getValue()?.get(this.props.sha), null, 2)}</pre>
             </div>
         );
     }
