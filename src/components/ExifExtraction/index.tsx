@@ -1,6 +1,5 @@
 import * as React from 'react';
 
-import {ImageFileGroupMap} from '../../types';
 import {ExifParserFactory} from "ts-exif-parser";
 import {currentExifDbEntries, currentImageFileGroups} from "lib/app_context";
 import {CallbackRemover} from "lib/observer";
@@ -12,8 +11,7 @@ type Props = {
 };
 
 type State = {
-    bySha?: ImageFileGroupMap;
-    ref?: firebase.database.Reference;
+    exifRef?: firebase.database.Reference;
     jobs: Job[];
     didSync?: boolean;
     stopObservingExifDb?: CallbackRemover;
@@ -29,7 +27,7 @@ type Job = {
 
 class ExifExtraction extends React.Component<Props, State> {
 
-    private updateTimer: number | undefined;
+    // private updateTimer: number | undefined;
 
     constructor(props: Props) {
         super(props);
@@ -40,6 +38,9 @@ class ExifExtraction extends React.Component<Props, State> {
     }
 
     componentDidMount() {
+        const exifRef = firebase.database().ref(`users/${this.props.user.uid}/exif`);
+        this.setState({ exifRef });
+
         const stopObservingExifDb = currentExifDbEntries.observe(() => {
             this.forceUpdate();
             this.startSync();
@@ -96,15 +97,14 @@ class ExifExtraction extends React.Component<Props, State> {
     }
 
     private maybeStartJob() {
-        const { ref, jobs } = this.state;
-        if (!ref) return;
+        const { jobs } = this.state;
 
         const nRunning = jobs.filter(job => job.status === "running").length;
-        // console.log(`maybeStartJob nRunning=${nRunning}`);
+        console.log(`maybeStartJob nRunning=${nRunning}`);
         if (nRunning >= 5) return;
 
         const job = jobs.find(j => j.status === "queued");
-        // console.log(`maybeStartJob next job=${job}`);
+        console.log(`maybeStartJob next job=${job}`);
         if (!job) return;
 
         console.log(`Starting job ${job.sha}`);
@@ -145,11 +145,8 @@ class ExifExtraction extends React.Component<Props, State> {
     // }
 
     private runFetchJob(job: Job): Promise<string> {
-        const bySha = this.state.bySha;
+        const bySha = currentImageFileGroups.getValue();
         if (!bySha) throw "No bySha";
-
-        const ref = this.state.ref;
-        if (!ref) throw "No ref";
 
         const path = bySha.get(job.sha)?.main?.path;
         if (!path) throw "No path";
@@ -182,16 +179,19 @@ class ExifExtraction extends React.Component<Props, State> {
 
                 return exifData.tags;
             }).then(tags => {
-                return ref.child(job.sha).child("tags").set(tags)
+                const exifRef = this.state.exifRef;
+                if (!exifRef) throw 'no exifRef';
+
+                return exifRef.child(job.sha).child("tags").set(tags)
                     .then(() => Object.keys(tags as any).sort().join(" "));
             });
     }
 
     private runDeleteJob(job: Job): Promise<string> {
-        const ref = this.state.ref;
-        if (!ref) throw "No ref";
+        const exifRef = this.state.exifRef;
+        if (!exifRef) throw "No exifRef";
 
-        return ref.child(job.sha).remove().then(() => "");
+        return exifRef.child(job.sha).remove().then(() => "");
     }
 
     render() {
