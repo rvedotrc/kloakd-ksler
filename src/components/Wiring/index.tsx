@@ -45,6 +45,14 @@ const Wiring = () => {
 
     return <div>
 
+        <ol>
+            <li>User: {user ? "logged in" : "-"}</li>
+            <li>Image DB: {imageMap ? `${imageMap.size} entries` : "-"}</li>
+            <li>Exif DB: {exifMap ? `${exifMap.size} entries` : "-"}</li>
+            <li>Storage: {imageFiles ? `${imageFiles.size} files` : "-"}</li>
+            <li>File groups: {imageFileGroups ? `${imageFileGroups.size} file groups` : "-"}</li>
+        </ol>
+
         <h1>currentUser</h1>
         <div><pre>{JSON.stringify(user, null, 2)}</pre></div>
 
