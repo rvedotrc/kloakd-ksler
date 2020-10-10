@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {ImageFileGroupMap} from '../../types';
+import {ExifDBEntry, ImageFileGroupMap} from '../../types';
 import fileReader from "../../file_reader";
 import {ExifParserFactory} from "ts-exif-parser";
 
@@ -16,10 +16,6 @@ type State = {
     ref?: firebase.database.Reference;
     jobs: Job[];
     didSync?: boolean;
-};
-
-type ExifDBEntry = {
-    tags: string[];
 };
 
 type Job = {
@@ -75,9 +71,9 @@ class ExifExtraction extends React.Component<Props, State> {
 
         Object.keys(rawDb).map(key => {
             if (key.match(/^(\w{64})$/)) {
-                // const rawValue = rawDb[key];
-                // TODO: parse rawValue to parsedValue
-                const parsedValue: ExifDBEntry = { tags: [] };
+                const rawData = rawDb[key];
+                // TODO: parse rawData to parsedValue
+                const parsedValue: ExifDBEntry = { tags: [], rawData };
                 answer.set(key, parsedValue);
             } else {
                 badKeys.push(key);
