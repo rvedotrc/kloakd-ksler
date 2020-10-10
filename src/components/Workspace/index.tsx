@@ -5,6 +5,7 @@ import WorkspaceBar, {TabType} from '../WorkspaceBar';
 import ImageList from "../ImageList";
 import Upload from "../Upload";
 import ExifExtraction from "../ExifExtraction";
+import Wiring from "../Wiring";
 
 declare const firebase: typeof import('firebase');
 
@@ -49,6 +50,9 @@ class Workspace extends React.Component<Props, State> {
                     )}
                     {(selectedTab === 'imageListTab') && (
                         <ImageList user={user}/>
+                    )}
+                    {(selectedTab === 'wiringTab') && (
+                        <Wiring/>
                     )}
                 </div>
             </div>
