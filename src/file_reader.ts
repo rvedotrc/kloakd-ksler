@@ -1,21 +1,11 @@
-import {ImageFile, ImageFileGroup, ImageFileGroupMap} from "./types";
+import {ImageFileMap} from "./types";
 
 declare const firebase: typeof import('firebase');
 
-const fileReader = (user: firebase.User, withMainMetadata: boolean): Promise<ImageFileGroupMap> => {
+const fileReader = (user: firebase.User): Promise<ImageFileMap> => {
      const imagesRef = firebase.storage().ref().child(`user/${user.uid}/images`);
 
-    const bySha = new Map<string, ImageFileGroup>();
-
-    const addDefault = (sha: string) => {
-        console.debug(`Adding empty imageFileGroup for ${sha}`);
-        const group: ImageFileGroup = {
-            sha,
-            thumbnails: new Map<string, ImageFile>(),
-        };
-        bySha.set(sha, group);
-        return group;
-    };
+    const byFullPath: ImageFileMap = new Map();
 
     const promisePage = (pageToken: string | null): Promise<any> => {
         console.log("promisePage", pageToken);
@@ -31,30 +21,30 @@ const fileReader = (user: firebase.User, withMainMetadata: boolean): Promise<Ima
 
             listResult.items.map(ref => {
                 const match = ref.name.match(/sha-256-(\w{64})(?:_(\d+x\d+))?$/);
-                console.debug(`Got storage file ${ref.fullPath} sha=${match?.[1]} thumbnailSize=${match?.[2]}`);
+                // console.debug(`Got storage file ${ref.fullPath} sha=${match?.[1]} thumbnailSize=${match?.[2]}`);
 
                 if (match) {
                     const sha = match[1];
                     const thumbnailSize = match[2];
 
-                    const entry = bySha.get(sha) || addDefault(sha);
-
-                    if (thumbnailSize) {
-                        const thumbnail: ImageFile = {
-                            path: ref.fullPath,
-                        };
-                        entry.thumbnails.set(thumbnailSize, thumbnail);
+                    if (!thumbnailSize) {
+                        promises.push(
+                            ref.getMetadata().then(metadata =>
+                                byFullPath.set(ref.fullPath, {
+                                    _tag: "main",
+                                    path: ref.fullPath,
+                                    sha,
+                                    metadata,
+                                })
+                            )
+                        );
                     } else {
-                        const main: ImageFile = {
+                        byFullPath.set(ref.fullPath, {
+                            _tag: "thumbnail",
                             path: ref.fullPath,
-                        };
-                        entry.main = main;
-
-                        if (withMainMetadata) {
-                            promises.push(
-                                ref.getMetadata().then(metadata => main.metadata = metadata)
-                            );
-                        }
+                            sha,
+                            thumbnailSize,
+                        });
                     }
                 } else {
                     ignoredNames.push(ref.name);
@@ -73,7 +63,10 @@ const fileReader = (user: firebase.User, withMainMetadata: boolean): Promise<Ima
         });
     };
 
-    return promisePage(null).then(() => bySha);
+    return promisePage(null).then(() => {
+        console.log(`Read ${byFullPath.size} files`);
+        return byFullPath;
+    });
 };
 
 export default fileReader;
