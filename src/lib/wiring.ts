@@ -1,11 +1,12 @@
 import {
     currentExifDbEntries,
-    currentImageDbEntries,
+    currentImageDbEntries, currentImageFileGroups, currentImageFiles,
     currentUser
 } from "lib/app_context";
 import {CallbackRemover} from "lib/observer";
 import {Observable} from "./observer";
-import {ExifDBEntry} from "../types";
+import {ExifDBEntry, ImageFileGroup, ImageFileGroupMap} from "../types";
+import getImageFiles from "../file_reader";
 
 declare const firebase: typeof import('firebase');
 
@@ -23,15 +24,53 @@ export const start = (): CallbackRemover => {
         )
     );
 
-    // currentStorageFiles
+    // currentImageFiles
+    currentUser.observe(user => {
+        if (user) {
+            getImageFiles(user).then(map => currentImageFiles.setValue(map));
+        } else {
+            currentImageFiles.setValue(undefined);
+        }
+    });
 
-    // currentImageFileGroupMap
+    // currentImageFileGroups
+    currentImageFiles.observe(files => {
+        if (!files) {
+            currentImageFileGroups.setValue(undefined);
+            return;
+        }
+
+        const map: ImageFileGroupMap = new Map();
+
+        const addEntry = (sha: string): ImageFileGroup => {
+            const entry: ImageFileGroup = {
+                sha,
+                main: undefined,
+                thumbnails: new Map(),
+            };
+            map.set(sha, entry);
+            return entry;
+        };
+
+        for (const image of files.values()) {
+            const entry: ImageFileGroup = map.get(image.sha) || addEntry(image.sha);
+
+            if ("thumbnailSize" in image) {
+                entry.thumbnails.set(image.thumbnailSize, image);
+            } else {
+                entry.main = image;
+            }
+        }
+
+        console.log(`Built ${map.size} file groups`);
+        currentImageFileGroups.setValue(map);
+    });
 
     // Database watchers:
 
     const watchDB = <T>(
         child: string,
-        observer: Observable<Map<string, T>>,
+        observer: Observable<Map<string, T> | undefined>,
         transformer: DBTransformer<T | null>
     ): void => {
 
@@ -59,7 +98,7 @@ export const start = (): CallbackRemover => {
                     dbRef.on('value', dbListener);
                 } else {
                     dbRef = null;
-                    observer.setValue(new Map());
+                    observer.setValue(undefined);
                 }
             })
         );

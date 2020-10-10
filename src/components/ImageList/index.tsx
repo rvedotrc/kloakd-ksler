@@ -3,9 +3,8 @@ import * as ReactModal from 'react-modal';
 
 import EditImage from "./edit_image";
 import ImageIcon from "./image_icon";
-import fileReader from "../../file_reader";
 import {DBEntry, ImageFileGroupMap} from "../../types";
-import {currentImageDbEntries} from "lib/app_context";
+import {currentImageDbEntries, currentImageFileGroups, currentImageFiles} from "lib/app_context";
 import {CallbackRemover} from "lib/observer";
 
 declare const firebase: typeof import('firebase');
@@ -19,11 +18,11 @@ type DisplayStyle = "grid" | "list" | "thumbnails";
 type State = {
     displayStyle: DisplayStyle;
     openImageSha?: string;
-    bySha?: ImageFileGroupMap;
     filterText?: string;
     effectiveFilterValue?: string;
     shaFilter?: Map<string, boolean>;
     stopObservingImageDb?: CallbackRemover;
+    stopObservingFileGroups?: CallbackRemover;
 };
 
 class ImageList extends React.Component<Props, State> {
@@ -41,28 +40,32 @@ class ImageList extends React.Component<Props, State> {
         });
         this.setState({ stopObservingImageDb });
 
-        this.readStorage();
+        const stopObservingFileGroups = currentImageFileGroups.observe(() => {
+            this.forceUpdate();
+        });
+
+        this.setState({ stopObservingFileGroups });
     }
 
     componentWillUnmount() {
         this.state?.stopObservingImageDb?.();
+        this.state?.stopObservingFileGroups?.();
     }
 
-    readStorage() {
-        fileReader(this.props.user, true)
-            .then(imageFileGroupMap => {
-                this.setState({ bySha: imageFileGroupMap });
-                this.runFilter(imageFileGroupMap, this.state.filterText || '');
-            })
-            .catch(e => console.log('storage list failed', e));
-    }
-
+    // Only needed because we don't watch storage properly yet
     shaDeleted(sha: string) {
-        const { bySha } = this.state;
-        if (!bySha) return;
+        const files = currentImageFiles.getValue();
+        if (!files) return;
 
-        bySha.delete(sha);
-        this.setState({ bySha });
+        const copy = new Map(files);
+
+        for (const [k, v] of files) {
+            if (v.sha === sha) {
+                copy.delete(k);
+            }
+        }
+
+        currentImageFiles.setValue(copy);
     }
 
     onUpdateFilter(newText: string) {
@@ -70,13 +73,15 @@ class ImageList extends React.Component<Props, State> {
 
         window.setTimeout(() => {
             if ((this.state.effectiveFilterValue || '') === newText) return;
-            if (!this.state.bySha) return;
 
-            this.runFilter(this.state.bySha, newText);
+            this.runFilter(newText);
         }, 200);
     }
 
-    runFilter(bySha: ImageFileGroupMap, filterText: string) {
+    runFilter(filterText: string) {
+        const bySha = currentImageFileGroups.getValue();
+        if (!bySha) return;
+
         const parts = filterText.trim().split(/\s+/);
         // console.log({ parts });
 
@@ -144,7 +149,10 @@ class ImageList extends React.Component<Props, State> {
     }
 
     getDBEntry(sha: string): DBEntry {
-        return currentImageDbEntries.getValue().get(sha) || {
+        const db = currentImageDbEntries.getValue();
+        if (!db) throw 'no db';
+
+        return db.get(sha) || {
             text: '',
             tags: [],
             rotateDegrees: 0,
@@ -276,7 +284,8 @@ class ImageList extends React.Component<Props, State> {
     render() {
         if (!this.state) return null;
 
-        const { bySha, shaFilter, displayStyle, openImageSha } = this.state;
+        const { shaFilter, displayStyle, openImageSha } = this.state;
+        const bySha = currentImageFileGroups.getValue();
 
         const displayStyles: { value: DisplayStyle; label: string; }[] = [
             { value: "grid", label: "Grid" },
@@ -300,7 +309,7 @@ class ImageList extends React.Component<Props, State> {
                                 id={"displayStyle-" + value}
                                 value={value}
                                 checked={displayStyle === value}
-                                onClick={() => this.setState({ displayStyle: value })}
+                                onChange={() => this.setState({ displayStyle: value })}
                             />
                             <label
                                 key={"label-" + value}

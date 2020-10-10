@@ -2,8 +2,8 @@ import * as React from 'react';
 
 import Dropzone from 'react-dropzone'
 
-import {ImageFileGroupMap} from '../../types';
-import fileReader from "../../file_reader";
+import {CallbackRemover} from "lib/observer";
+import {currentImageFileGroups} from "lib/app_context";
 
 declare const firebase: typeof import('firebase');
 
@@ -15,8 +15,8 @@ type State = {
     jobs: UploadJob[];
     forceReupload: boolean;
     dryRun: boolean;
-    bySha?: ImageFileGroupMap;
     reRenderTimer?: number;
+    stopObservingFileGroups?: CallbackRemover;
 };
 
 type UploadJob = {
@@ -41,15 +41,15 @@ class Upload extends React.Component<Props, State> {
     }
 
     componentDidMount() {
-        this.readStorage();
+        const stopObservingFileGroups = currentImageFileGroups.observe(() => {
+            this.forceUpdate();
+        });
+
+        this.setState({ stopObservingFileGroups });
     }
 
-    readStorage() {
-        fileReader(this.props.user, false)
-            .then(imageFileGroupMap => {
-                this.setState({ bySha: imageFileGroupMap });
-            })
-            .catch(e => console.log('storage list failed', e));
+    componentWillUnmount() {
+        this.state?.stopObservingFileGroups?.();
     }
 
     startUpload(job: UploadJob) {
@@ -142,7 +142,7 @@ class Upload extends React.Component<Props, State> {
     }
 
     uploadFiles(files: File[]) {
-        const { bySha } = this.state;
+        const bySha = currentImageFileGroups.getValue();
         if (!bySha) return;
 
         // console.log("files =", files);
@@ -187,7 +187,8 @@ class Upload extends React.Component<Props, State> {
     }
 
     render() {
-        const { bySha, forceReupload, dryRun } = this.state;
+        const bySha = currentImageFileGroups.getValue();
+        const { forceReupload, dryRun } = this.state;
 
         return (
             <div>
