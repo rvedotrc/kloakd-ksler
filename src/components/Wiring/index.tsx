@@ -7,7 +7,7 @@ import {
     currentImageFiles,
     currentUser
 } from "lib/app_context";
-import {DBEntry, ExifDBEntry, ImageFileGroup, ImageFileGroupMap, ImageFileMap} from "../../types";
+import {ImageFileGroup} from "../../types";
 
 declare const firebase: typeof import('firebase');
 
@@ -28,19 +28,19 @@ const renderImageFileGroup = (g?: ImageFileGroup): React.ReactNode => {
 };
 
 const Wiring = () => {
-    const [user, setUser] = useState<firebase.User | null>();
+    const [user, setUser] = useState(currentUser.getValue());
     useEffect(() => currentUser.observe(setUser), []);
 
-    const [imageMap, setImageMap] = useState<Map<string, DBEntry>>();
+    const [imageMap, setImageMap] = useState(currentImageDbEntries.getValue());
     useEffect(() => currentImageDbEntries.observe(setImageMap), []);
 
-    const [exifMap, setExifMap] = useState<Map<string, ExifDBEntry>>();
+    const [exifMap, setExifMap] = useState(currentExifDbEntries.getValue());
     useEffect(() => currentExifDbEntries.observe(setExifMap), []);
 
-    const [imageFiles, setImageFiles] = useState<ImageFileMap>();
+    const [imageFiles, setImageFiles] = useState(currentImageFiles.getValue());
     useEffect(() => currentImageFiles.observe(setImageFiles), []);
 
-    const [imageFileGroups, setImageFileGroups] = useState<ImageFileGroupMap>();
+    const [imageFileGroups, setImageFileGroups] = useState(currentImageFileGroups.getValue());
     useEffect(() => currentImageFileGroups.observe(setImageFileGroups), []);
 
     return <div>
