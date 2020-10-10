@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-export type TabType = "startTab" | "uploadTab" | "exifTab" | "imageListTab";
+export type TabType = "startTab" | "uploadTab" | "exifTab" | "imageListTab" | "wiringTab";
 
 type Props = {
     onSwitchTab: (newTab: TabType) => void;
@@ -21,6 +21,8 @@ class WorkspaceBar extends React.Component<Props, never> {
                 <button onClick={()=>{this.switchTabTo('exifTab')}}>EXIF Extraction</button>
                 &nbsp;
                 <button onClick={()=>{this.switchTabTo('imageListTab')}}>Images</button>
+                &nbsp;
+                <button onClick={()=>{this.switchTabTo('wiringTab')}}>Wiring</button>
                 {/*&nbsp;*/}
                 {/*<button onClick={()=>{this.switchTabTo('verbListTab')}}>{t('workspace_bar.list_of_verbs')}</button>*/}
                 {/*&nbsp;*/}

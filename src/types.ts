@@ -23,3 +23,8 @@ export type DBEntry = {
     centerYRatio: number;
     radiusRatio: number;
 };
+
+export type ExifDBEntry = {
+    tags: string[];
+    rawData: any;
+}
