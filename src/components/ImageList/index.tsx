@@ -5,6 +5,8 @@ import EditImage from "./edit_image";
 import ImageIcon from "./image_icon";
 import fileReader from "../../file_reader";
 import {DBEntry, ImageFileGroupMap} from "../../types";
+import {currentImageDbEntries} from "lib/app_context";
+import {CallbackRemover} from "lib/observer";
 
 declare const firebase: typeof import('firebase');
 
@@ -15,14 +17,13 @@ type Props = {
 type DisplayStyle = "grid" | "list" | "thumbnails";
 
 type State = {
-    ref?: firebase.database.Reference;
     displayStyle: DisplayStyle;
     openImageSha?: string;
-    dbValue?: any;
     bySha?: ImageFileGroupMap;
     filterText?: string;
     effectiveFilterValue?: string;
     shaFilter?: Map<string, boolean>;
+    stopObservingImageDb?: CallbackRemover;
 };
 
 class ImageList extends React.Component<Props, State> {
@@ -35,16 +36,16 @@ class ImageList extends React.Component<Props, State> {
     }
 
     componentDidMount() {
-        const ref = firebase.database().ref(`users/${this.props.user.uid}/images`);
-        this.setState({ ref });
-        ref.on('value', snapshot => this.setState({ dbValue: snapshot.val() || {}}));
+        const stopObservingImageDb = currentImageDbEntries.observe(() => {
+            this.forceUpdate();
+        });
+        this.setState({ stopObservingImageDb });
 
         this.readStorage();
     }
 
     componentWillUnmount() {
-        const { ref } = this.state;
-        if (ref) ref.off();
+        this.state?.stopObservingImageDb?.();
     }
 
     readStorage() {
@@ -78,12 +79,12 @@ class ImageList extends React.Component<Props, State> {
     runFilter(bySha: ImageFileGroupMap, filterText: string) {
         const parts = filterText.trim().split(/\s+/);
         // console.log({ parts });
-        const dbValue = this.state.dbValue || {};
+
         const shaFilter = new Map<string, boolean>();
 
         for (const sha of bySha.keys()) {
             // const image = bySha[sha];
-            const dbData = (dbValue[sha] || {}) as DBEntry;
+            const dbData: DBEntry = this.getDBEntry(sha);
             // console.log({ sha, image, dbData });
 
             const matches = parts.every(part => {
@@ -91,9 +92,9 @@ class ImageList extends React.Component<Props, State> {
                 const term = part.replace(/^-/, '');
 
                 const matchesTerm = (
-                    (dbData.text || '').includes(term)
+                    dbData.text.includes(term)
                     ||
-                    (dbData.tags || []).some(tag => tag.includes(term))
+                    dbData.tags.some(tag => tag.includes(term))
                 );
 
                 return matchesTerm != invert;
@@ -134,7 +135,7 @@ class ImageList extends React.Component<Props, State> {
                     user={this.props.user}
                     sha={openImageSha}
                     entry={openImageEntry}
-                    dbEntry={this.getDBEntry(this.state.dbValue, openImageSha)}
+                    dbEntry={this.getDBEntry(openImageSha)}
                     onClose={() => this.setState({ openImageSha: undefined })}
                     onDelete={sha => this.shaDeleted(sha)}
                 />
@@ -142,20 +143,18 @@ class ImageList extends React.Component<Props, State> {
         );
     }
 
-    getDBEntry(dbValue: any, sha: string): DBEntry {
-        const entry = dbValue[sha] || {};
-
-        return {
-            text: entry.text || "",
-            tags: entry.tags || [],
-            rotateDegrees: entry.rotateDegrees || 0,
-            centerXRatio: entry.centerXRatio || 0.5,
-            centerYRatio: entry.centerYRatio || 0.5,
-            radiusRatio: entry.radiusRatio || 0.5,
+    getDBEntry(sha: string): DBEntry {
+        return currentImageDbEntries.getValue().get(sha) || {
+            text: '',
+            tags: [],
+            rotateDegrees: 0,
+            centerXRatio: 0.5,
+            centerYRatio: 0.5,
+            radiusRatio: 0.5,
         };
     }
 
-    renderFiles(bySha: ImageFileGroupMap, shaFilter: Map<string, boolean> | undefined, dbValue: any, displayStyle: DisplayStyle) {
+    renderFiles(bySha: ImageFileGroupMap, shaFilter: Map<string, boolean> | undefined, displayStyle: DisplayStyle) {
         const list = this.getSortedList(bySha, shaFilter);
 
         if (displayStyle === 'grid') {
@@ -176,7 +175,7 @@ class ImageList extends React.Component<Props, State> {
                                     <ImageIcon
                                         sha={sha}
                                         entry={entry}
-                                        dbEntry={this.getDBEntry(dbValue, sha)}
+                                        dbEntry={this.getDBEntry(sha)}
                                         preferredThumbnail={"200x200"}
                                         desiredSize={100}
                                         withText={true}
@@ -205,7 +204,7 @@ class ImageList extends React.Component<Props, State> {
                                     <ImageIcon
                                         sha={sha}
                                         entry={entry}
-                                        dbEntry={this.getDBEntry(dbValue, sha)}
+                                        dbEntry={this.getDBEntry(sha)}
                                         preferredThumbnail={"500x500"}
                                         desiredSize={200}
                                         withText={false}
@@ -243,7 +242,7 @@ class ImageList extends React.Component<Props, State> {
                                 const entry = entryAndMatches.imageFileGroup;
                                 const matches = entryAndMatches.matches;
                                 const sha = entry.sha;
-                                const dbData = this.getDBEntry(dbValue, sha);
+                                const dbData = this.getDBEntry(sha);
 
                                 return (
                                     <tr
@@ -277,7 +276,7 @@ class ImageList extends React.Component<Props, State> {
     render() {
         if (!this.state) return null;
 
-        const { bySha, shaFilter, displayStyle, dbValue, openImageSha } = this.state;
+        const { bySha, shaFilter, displayStyle, openImageSha } = this.state;
 
         const displayStyles: { value: DisplayStyle; label: string; }[] = [
             { value: "grid", label: "Grid" },
@@ -322,7 +321,7 @@ class ImageList extends React.Component<Props, State> {
                     />
                 </p>
 
-                {bySha && dbValue && this.renderFiles(bySha, shaFilter, dbValue, displayStyle)}
+                {bySha && this.renderFiles(bySha, shaFilter, displayStyle)}
             </div>
         )
     }
