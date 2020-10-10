@@ -3,6 +3,8 @@ import * as React from 'react';
 import {ExifDBEntry, ImageFileGroupMap} from '../../types';
 import fileReader from "../../file_reader";
 import {ExifParserFactory} from "ts-exif-parser";
+import {currentExifDbEntries} from "lib/app_context";
+import {CallbackRemover} from "lib/observer";
 
 declare const firebase: typeof import('firebase');
 
@@ -12,10 +14,10 @@ type Props = {
 
 type State = {
     bySha?: ImageFileGroupMap;
-    dbValue?: ExifDB;
     ref?: firebase.database.Reference;
     jobs: Job[];
     didSync?: boolean;
+    stopObservingExifDb?: CallbackRemover;
 };
 
 type Job = {
@@ -40,27 +42,24 @@ class ExifExtraction extends React.Component<Props, State> {
     }
 
     componentDidMount() {
-        const ref = firebase.database().ref(`users/${this.props.user.uid}/exif`);
-        this.setState({ ref });
-        ref.on('value', snapshot => {
-            const dbValue: ExifDB = this.parseDB(snapshot.val() || {});
-            this.setState({ dbValue });
-            this.startSync({ bySha: this.state.bySha, dbValue });
+        const stopObservingExifDb = currentExifDbEntries.observe(() => {
+            this.forceUpdate();
+            this.startSync({ bySha: this.state.bySha });
         });
+        this.setState({ stopObservingExifDb });
 
         this.readStorage();
     }
 
     componentWillUnmount() {
-        const { ref } = this.state;
-        if (ref) ref.off();
+        this.state?.stopObservingExifDb?.();
     }
 
     private readStorage() {
         fileReader(this.props.user, false)
             .then(imageFileGroupMap => {
                 this.setState({ bySha: imageFileGroupMap });
-                this.startSync({ bySha: imageFileGroupMap, dbValue: this.state.dbValue });
+                this.startSync({ bySha: imageFileGroupMap });
             })
             .catch(e => console.log('storage list failed', e));
     }
@@ -87,9 +86,11 @@ class ExifExtraction extends React.Component<Props, State> {
         return answer;
     }
 
-    private startSync(args: { bySha?: ImageFileGroupMap, dbValue?: ExifDB; }) {
-        const { bySha, dbValue } = args;
-        if (!bySha || !dbValue) return;
+    private startSync(args: { bySha?: ImageFileGroupMap }) {
+        const { bySha } = args;
+        if (!bySha) return;
+
+        const dbValue = currentExifDbEntries.getValue();
         if (this.state.didSync) return;
 
         const jobs = this.state.jobs;
@@ -219,7 +220,8 @@ class ExifExtraction extends React.Component<Props, State> {
     }
 
     render() {
-        const { bySha, dbValue, jobs } = this.state;
+        const { bySha, jobs } = this.state;
+        const dbValue = currentExifDbEntries.getValue();
 
         return (
             <div>
@@ -229,13 +231,9 @@ class ExifExtraction extends React.Component<Props, State> {
                     <p>Loading file list...</p>
                 )}
 
-                {!dbValue && (
-                    <p>Loading database...</p>
-                )}
-
                 {bySha && <p>Loaded {bySha.size} files</p>}
 
-                {dbValue && <><p>DB has {dbValue.size} entries</p></>}
+                <p>DB has {dbValue.size} entries</p>
 
                 <h2>Jobs</h2>
                 <table>
