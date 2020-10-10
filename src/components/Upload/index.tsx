@@ -16,8 +16,6 @@ type State = {
     forceReupload: boolean;
     dryRun: boolean;
     bySha?: ImageFileGroupMap;
-    dbValue?: boolean;
-    ref?: firebase.database.Reference;
     reRenderTimer?: number;
 };
 
@@ -43,16 +41,7 @@ class Upload extends React.Component<Props, State> {
     }
 
     componentDidMount() {
-        const ref = firebase.database().ref(`users/${this.props.user.uid}/images`);
-        this.setState({ ref });
-        ref.on('value', snapshot => this.setState({ dbValue: snapshot.val() || {}}));
-
         this.readStorage();
-    }
-
-    componentWillUnmount() {
-        const { ref } = this.state;
-        if (ref) ref.off();
     }
 
     readStorage() {
