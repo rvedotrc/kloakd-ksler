@@ -265,7 +265,7 @@ class ImageList extends React.Component<Props, State> {
                                         <td>{entry.main?.metadata?.customMetadata.originalName}</td>
                                         <td>{dbData.text}</td>
                                         <td>{dbData.tags.sort().join(" ")}</td>
-                                        <td>{geo ? <a href={geo.geohackUrl}>🌍</a> : null}</td>
+                                        <td>{geo ? <a className={"geohackLink"} href={geo.geohackUrl}>🌍</a> : null}</td>
 
                                         {/* Debugging stuff below here */}
                                         <td>{entry.main?.metadata?.size}</td>
