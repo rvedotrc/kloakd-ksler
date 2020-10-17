@@ -3,7 +3,7 @@ import * as ReactModal from 'react-modal';
 
 import EditImage from "./edit_image";
 import ImageIcon from "./image_icon";
-import {DBEntry, ImageFileGroupMap} from "../../types";
+import {DBEntry, ImageFileGroupMap} from "lib/types";
 import {currentImageDbEntries, currentImageFileGroups, currentImageFiles} from "lib/app_context";
 import {CallbackRemover} from "lib/observer";
 
