@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {ImageFileGroup} from "../../types";
+import {ImageFileGroup} from "lib/types";
 
 declare const firebase: typeof import('firebase');
 

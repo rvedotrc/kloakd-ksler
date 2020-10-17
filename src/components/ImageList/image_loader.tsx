@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {ImageFileGroup} from "../../types";
+import {ImageFileGroup} from "lib/types";
 import ImageDownloader from "./image_downloader";
 
 export type WidthAndHeight = {

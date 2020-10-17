@@ -1,5 +1,5 @@
 import {Observable} from "lib/observer";
-import {DBEntry, ExifDBEntry, ImageFileMap, ImageFileGroupMap} from "../types";
+import {DBEntry, ExifDBEntry, ImageFileMap, ImageFileGroupMap} from "./types";
 
 export const currentUser = new Observable<firebase.User | null>(null);
 export const currentImageFiles = new Observable<ImageFileMap | undefined>(undefined);

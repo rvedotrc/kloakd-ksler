@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {DBEntry} from "../../types";
+import {DBEntry} from "lib/types";
 import {WidthAndHeight} from "./image_loader";
 
 type Props = {

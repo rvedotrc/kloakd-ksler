@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {DBEntry, ImageFileGroup} from "../../types";
+import {DBEntry, ImageFileGroup} from "lib/types";
 import ImageLoader from "./image_loader";
 
 type Props = {

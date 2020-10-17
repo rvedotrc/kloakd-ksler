@@ -5,8 +5,8 @@ import {
 } from "lib/app_context";
 import {CallbackRemover} from "lib/observer";
 import {Observable} from "./observer";
-import {ExifDBEntry, ImageFileGroup, ImageFileGroupMap} from "../types";
-import getImageFiles from "../file_reader";
+import {ExifDBEntry, ImageFileGroup, ImageFileGroupMap} from "./types";
+import getImageFiles from "./file_reader";
 
 declare const firebase: typeof import('firebase');
 
