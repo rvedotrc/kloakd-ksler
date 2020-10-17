@@ -6,6 +6,7 @@ import ImageIcon from "./image_icon";
 import {DBEntry, ImageFileGroupMap} from "lib/types";
 import {currentImageDbEntries, currentImageFileGroups, currentImageFiles} from "lib/app_context";
 import {CallbackRemover} from "lib/observer";
+import * as Geo from "lib/geo";
 
 declare const firebase: typeof import('firebase');
 
@@ -30,7 +31,7 @@ class ImageList extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
         this.state = {
-            displayStyle: "grid",
+            displayStyle: "list",
         };
     }
 
@@ -235,6 +236,7 @@ class ImageList extends React.Component<Props, State> {
                                 <th>Original Name</th>
                                 <th>Text</th>
                                 <th>Tags</th>
+                                <th>GPS</th>
 
                                 {/* Debugging stuff below here */}
                                 <th>Size</th>
@@ -251,6 +253,7 @@ class ImageList extends React.Component<Props, State> {
                                 const matches = entryAndMatches.matches;
                                 const sha = entry.sha;
                                 const dbData = this.getDBEntry(sha);
+                                const geo = Geo.forSha(sha);
 
                                 return (
                                     <tr
@@ -262,6 +265,7 @@ class ImageList extends React.Component<Props, State> {
                                         <td>{entry.main?.metadata?.customMetadata.originalName}</td>
                                         <td>{dbData.text}</td>
                                         <td>{dbData.tags.sort().join(" ")}</td>
+                                        <td>{geo ? <a href={geo.geohackUrl}>🌍</a> : null}</td>
 
                                         {/* Debugging stuff below here */}
                                         <td>{entry.main?.metadata?.size}</td>

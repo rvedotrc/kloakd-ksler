@@ -3,6 +3,7 @@ import {DBEntry, ImageFileGroup} from "lib/types";
 import ImageLoader from "./image_loader";
 import ImageWithGeometry from "./image_with_geometry";
 import {currentExifDbEntries} from "lib/app_context";
+import * as Geo from "lib/geo";
 
 declare const firebase: typeof import('firebase');
 
@@ -140,6 +141,8 @@ class EditImage extends React.Component<Props, State> {
         const { dbEntry } = this.state;
         if (!dbEntry) return null;
 
+        const geo = Geo.forSha(this.props.sha);
+
         return (
             <div>
                 <form
@@ -246,6 +249,10 @@ class EditImage extends React.Component<Props, State> {
                 <pre>{JSON.stringify(this.props.entry, null, 2)}</pre>
                 <pre>{JSON.stringify(Array.from(this.props.entry.thumbnails.keys()).sort())}</pre>
                 <pre>{JSON.stringify(currentExifDbEntries.getValue()?.get(this.props.sha), null, 2)}</pre>
+
+                <p>
+                    {geo ? <a href={geo.geohackUrl}>geo</a> : "No GPS data"}
+                </p>
             </div>
         );
     }
